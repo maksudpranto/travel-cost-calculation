@@ -11,14 +11,25 @@ export const BalancesCard = ({ people, avgCost }: BalancesCardProps) => {
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
       <h3 className="text-lg font-bold mb-4">Balances</h3>
-      <div className="space-y-5">
+      <div className="space-y-4">
         {people.map((person) => {
           const balance = person.deposit - avgCost;
           const isRefund = balance > 0;
           const isSettled = balance === 0;
+
           return (
             <div key={person.id} className="flex justify-between items-center text-sm">
-              <span className="text-gray-900 font-medium">{person.name}</span>
+
+              {/* --- UPDATED STYLE START: Avatar + Name --- */}
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
+                   {person.name.charAt(0)}
+                </div>
+                <span className="text-gray-900 font-medium">{person.name}</span>
+              </div>
+              {/* --- UPDATED STYLE END --- */}
+
+              {/* Right Side: Status & Numbers */}
               {isSettled ? (
                 <span className="text-gray-400 text-xs">Settled</span>
               ) : (

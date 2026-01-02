@@ -18,7 +18,7 @@ export const ExpensesCard = ({ expenses, onAdd, onEdit, onDelete }: ExpensesCard
         <button
           onClick={onAdd}
           className="flex items-center gap-1 text-sm bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 rounded-md shadow-sm transition">
-          <Plus size={18} /> Add
+          <Plus size={18} /> Add Expense
         </button>
       </div>
       <div className="space-y-4">
