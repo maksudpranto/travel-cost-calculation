@@ -9,37 +9,40 @@ interface BalancesCardProps {
 
 export const BalancesCard = ({ people, avgCost }: BalancesCardProps) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-      <h3 className="text-lg font-bold mb-4">Balances</h3>
-      <div className="space-y-4">
+    // MODERN CONTAINER
+    <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
+      <h3 className="text-lg font-bold text-gray-800 mb-6">Settlement</h3>
+
+      <div className="space-y-3">
         {people.map((person) => {
           const balance = person.deposit - avgCost;
           const isRefund = balance > 0;
-          const isSettled = balance === 0;
+          const isSettled = Math.abs(balance) < 1; // Tolerance for small decimals
 
           return (
-            <div key={person.id} className="flex justify-between items-center text-sm">
+            <div key={person.id} className="flex justify-between items-center p-2 rounded-xl hover:bg-gray-50/50 transition-colors">
 
-              {/* --- UPDATED STYLE START: Avatar + Name --- */}
+              {/* LEFT: Avatar + Name (Matches PeopleCard style) */}
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
-                   {person.name.charAt(0)}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                  {person.name.charAt(0)}
                 </div>
-                <span className="text-gray-900 font-medium">{person.name}</span>
+                <span className="font-semibold text-gray-900">{person.name}</span>
               </div>
-              {/* --- UPDATED STYLE END --- */}
 
-              {/* Right Side: Status & Numbers */}
+              {/* RIGHT: Status Text & Amount */}
               {isSettled ? (
-                <span className="text-gray-400 text-xs">Settled</span>
+                 <span className="text-gray-400 text-xs font-medium bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                   All Settled
+                 </span>
               ) : (
-                <div className="flex items-center gap-3">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isRefund ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {isRefund ? 'Refund' : 'Needs to add'}
-                  </span>
-                  <span className="font-bold text-gray-900 w-12 text-right">
-                    {isRefund ? '+' : ''}{Math.round(balance).toLocaleString()}
-                  </span>
+                <div className="text-right">
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isRefund ? 'text-emerald-600' : 'text-rose-500'}`}>
+                    {isRefund ? 'Gets back' : 'Owes'}
+                  </p>
+                  <p className="font-bold text-gray-900 text-sm">
+                    {isRefund ? '+' : ''}৳{Math.round(Math.abs(balance)).toLocaleString()}
+                  </p>
                 </div>
               )}
             </div>

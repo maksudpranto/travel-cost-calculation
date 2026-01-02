@@ -22,7 +22,7 @@ export const Sidebar = ({
         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
           <Globe size={18} />
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Travel Split</h1>
+        <h1 className="text-xl font-bold text-gray-900">Travello by Pranto</h1>
       </div>
       <p className="text-xs text-gray-400 pl-11">Multi-trip manager</p>
     </div>
