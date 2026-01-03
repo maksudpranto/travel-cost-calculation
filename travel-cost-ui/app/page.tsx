@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Download, Menu, Map } from "lucide-react";
+import { Plus, Download, Menu, Map, Calculator } from "lucide-react"; // Calculator Icon
+import Link from 'next/link'; // Link Component
 
 // --- IMPORTS ---
 import { Trip } from './types';
 import { Sidebar } from './components/Sidebar';
 import { AddModal, DeleteConfirmModal } from './components/Modals';
 
-// --- NEW COMPONENT IMPORTS ---
+// --- COMPONENT IMPORTS ---
 import { PeopleCard } from './components/PeopleCard';
 import { ExpensesCard } from './components/ExpensesCard';
 import { BalancesCard } from './components/BalancesCard';
@@ -159,6 +160,14 @@ export default function Dashboard() {
             {activeTrip && <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">{activeTrip.currency}</span>}
           </div>
           <div className="flex gap-3">
+
+            {/* --- UPDATED LINK: Points to app/calculator/page.tsx --- */}
+            <Link href="/Bulk">
+              <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+                <Calculator size={16} /> Bulk Cost Calculator
+              </button>
+            </Link>
+
             {activeTrip && <button onClick={handleExport} className="flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"><Download size={16} /> Export</button>}
             <button onClick={() => handleAddClick('trip')} className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition shadow-sm"><Plus size={16} /> New Trip</button>
           </div>
@@ -167,33 +176,22 @@ export default function Dashboard() {
         {activeTrip ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-
-            {/* NEW: PEOPLE COMPONENT */}
             <PeopleCard
               people={activeTrip.people}
               onAdd={() => handleAddClick('person')}
               onEdit={(p) => handleEditItem('person', p)}
               onDelete={(id) => handleDeleteItem('person', id)}
             />
-
-            {/* NEW: EXPENSES COMPONENT */}
             <ExpensesCard
               expenses={activeTrip.expenses}
               onAdd={() => handleAddClick('expense')}
               onEdit={(e) => handleEditItem('expense', e)}
               onDelete={(id) => handleDeleteItem('expense', id)}
             />
-
           </div>
-
           <div className="space-y-6">
-
-            {/* NEW: SUMMARY COMPONENT */}
             <SummaryGrid stats={stats} />
-
-            {/* NEW: BALANCES COMPONENT */}
             <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
-
           </div>
         </div>
         ) : (

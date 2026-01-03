@@ -24,7 +24,7 @@ export const Sidebar = ({
         </div>
         <h1 className="text-xl font-bold text-gray-900">Travello by Pranto</h1>
       </div>
-      <p className="text-xs text-gray-400 pl-11">Multi-trip manager</p>
+      <p className="text-xs text-gray-400 pl-11">Your Perfect Trip Manager</p>
     </div>
     <nav className="flex-1 px-4 space-y-6 mt-4">
       <div>

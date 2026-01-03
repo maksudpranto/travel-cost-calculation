@@ -76,7 +76,7 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
 
         {/* Avg Cost (Purple) */}
         <StatItem
-          label="Cost / Person"
+          label="Average Cost"
           value={Math.round(stats.avgCost).toLocaleString()}
           icon={Users}
           iconColor="text-purple-600"
