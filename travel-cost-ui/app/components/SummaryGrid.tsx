@@ -1,4 +1,3 @@
-// components/SummaryGrid.tsx
 import React from 'react';
 import { Wallet, Receipt, Coins, Users, TrendingUp, TrendingDown, LucideIcon } from "lucide-react";
 
@@ -8,8 +7,10 @@ interface SummaryGridProps {
     totalExpenses: number;
     remaining: number;
     avgCost: number;
-    maxCost: number; // New Prop
-    minCost: number; // New Prop
+    maxCost: number;
+    minCost: number;
+    maxExpenseName?: string; // New Prop
+    minExpenseName?: string; // New Prop
   };
 }
 
@@ -17,12 +18,14 @@ interface SummaryGridProps {
 const StatItem = ({
   label,
   value,
+  subLabel, // New Optional Prop for "Title: ..."
   icon: Icon,
   iconColor,
   iconBg
 }: {
   label: string;
   value: string;
+  subLabel?: string;
   icon: LucideIcon;
   iconColor: string;
   iconBg: string;
@@ -33,11 +36,21 @@ const StatItem = ({
         <Icon size={20} />
       </div>
     </div>
+
     <div>
       <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
+
+      {/* Main Value */}
       <p className="text-lg sm:text-xl font-bold text-gray-900 truncate">
         ৳{value}
       </p>
+
+      {/* Sub Label (Title: Expense Name) */}
+      {subLabel && subLabel !== 'Title: -' && (
+        <p className="text-[10px] sm:text-xs text-gray-500 font-medium truncate mt-1 bg-gray-100/80 px-2 py-0.5 rounded-md inline-block max-w-full">
+          {subLabel}
+        </p>
+      )}
     </div>
   </div>
 );
@@ -48,7 +61,6 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
       <h3 className="text-lg font-bold text-gray-800 mb-5">Trip Summary</h3>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Total Pot */}
         <StatItem
           label="Total Pot"
           value={stats.totalDeposits.toLocaleString()}
@@ -57,7 +69,6 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
           iconBg="bg-emerald-100"
         />
 
-        {/* Total Spent */}
         <StatItem
           label="Total Spent"
           value={stats.totalExpenses.toLocaleString()}
@@ -66,7 +77,6 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
           iconBg="bg-rose-100"
         />
 
-        {/* Remaining */}
         <StatItem
           label="Remaining"
           value={stats.remaining.toLocaleString()}
@@ -75,7 +85,6 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
           iconBg="bg-blue-100"
         />
 
-        {/* Avg Cost */}
         <StatItem
           label="Cost / Person"
           value={Math.round(stats.avgCost).toLocaleString()}
@@ -84,19 +93,21 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
           iconBg="bg-purple-100"
         />
 
-        {/* --- NEW: MAX COST --- */}
+        {/* MAX EXPENSE with Title */}
         <StatItem
           label="Max Expense"
           value={stats.maxCost.toLocaleString()}
+          subLabel={`Expense: ${stats.maxExpenseName || '-'}`}
           icon={TrendingUp}
           iconColor="text-orange-600"
           iconBg="bg-orange-100"
         />
 
-        {/* --- NEW: MIN COST --- */}
+        {/* MIN EXPENSE with Title */}
         <StatItem
           label="Min Expense"
           value={stats.minCost.toLocaleString()}
+          subLabel={`Expense: ${stats.minExpenseName || '-'}`}
           icon={TrendingDown}
           iconColor="text-teal-600"
           iconBg="bg-teal-100"

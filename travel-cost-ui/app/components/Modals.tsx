@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, User, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, User, FileText, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 
 interface AddModalProps {
   isOpen: boolean;
@@ -17,6 +17,70 @@ interface DeleteModalProps {
   message?: string;
 }
 
+// --- HELPER: Internal Modern Date Picker Component ---
+const ModernDatePicker = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Format displayed date
+  const displayDate = value
+    ? new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : 'Select Date';
+
+  const isSelected = !!value;
+
+  // This function forces the calendar to open
+  const handleDivClick = () => {
+    try {
+      if (inputRef.current) {
+        if (typeof inputRef.current.showPicker === 'function') {
+          inputRef.current.showPicker(); // Modern Browsers
+        } else {
+          inputRef.current.focus(); // Fallback
+        }
+      }
+    } catch (error) {
+      console.log("Picker error", error);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2 w-full">
+      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{label}</label>
+
+      {/* 1. onClick triggers handleDivClick -> opens calendar
+         2. relative group -> creates the container
+      */}
+      <div
+        onClick={handleDivClick}
+        className="relative group w-full cursor-pointer"
+      >
+        {/* VISUAL LAYER */}
+        <div className={`
+          flex items-center justify-between w-full px-4 py-3
+          bg-gray-50 border rounded-xl transition-all duration-200
+          ${isSelected ? 'border-gray-300 text-gray-900 bg-white' : 'border-gray-200 text-gray-400'}
+          group-hover:border-[#41644A] group-hover:bg-white group-hover:shadow-sm
+        `}>
+          <div className="flex items-center gap-3">
+            <CalendarIcon size={18} className={isSelected ? 'text-[#41644A]' : 'text-gray-400'} />
+            <span className="text-sm font-medium">{displayDate}</span>
+          </div>
+          <ChevronDown size={16} className="text-gray-400 opacity-50" />
+        </div>
+
+        {/* INVISIBLE INPUT LAYER */}
+        <input
+          ref={inputRef}
+          type="date"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+        />
+      </div>
+    </div>
+  );
+};
+
 export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModalProps) => {
   const [name, setName] = useState('');
   const [deposit, setDeposit] = useState('');
@@ -24,7 +88,6 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
 
-  // --- NEW DATE STATES ---
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -39,7 +102,6 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
         setAmount(initialData.amount.toString());
       } else if (type === 'trip') {
         setName(initialData.name);
-        // Load dates if they exist
         setStartDate(initialData.startDate || '');
         setEndDate(initialData.endDate || '');
       }
@@ -61,7 +123,6 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
     if (type === 'person') {
       onSave({ name, deposit: Number(deposit) });
     } else if (type === 'trip') {
-      // Save dates with trip data
       onSave({ name, startDate, endDate });
     } else {
       onSave({ item, description, amount: Number(amount) });
@@ -69,33 +130,51 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
     onClose();
   };
 
-  const inputStyle = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-blue-600 transition-colors";
+  const inputStyle = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#41644A] transition-colors";
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-800">
+
+      {/* CSS Hack to ensure the calendar click area is maximized on WebKit browsers */}
+      <style>{`
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          cursor: pointer;
+        }
+      `}</style>
+
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+
+        {/* Header */}
+        <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="text-xl font-bold text-gray-800">
             {initialData ? 'Edit' : 'Add'} {type === 'person' ? 'Person' : type === 'expense' ? 'Expense' : 'Trip'}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X size={20} />
+            <X size={24} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
           {/* --- PERSON FORM --- */}
           {type === 'person' && (
             <>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Name</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Name</label>
                 <div className="relative">
                   <User className="absolute left-4 top-3.5 text-gray-400" size={18} />
                   <input required type="text" placeholder="Enter name" value={name} onChange={(e) => setName(e.target.value)} className={`${inputStyle} pl-11`} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Deposit Amount</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Deposit Amount</label>
                 <div className="relative">
                   <span className="absolute left-4 top-3 text-gray-400 font-bold text-lg">৳</span>
                   <input required type="number" placeholder="0" value={deposit} onChange={(e) => setDeposit(e.target.value)} className={`${inputStyle} pl-11`} />
@@ -108,68 +187,54 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
           {type === 'expense' && (
             <>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Item Name</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Item Name</label>
                 <div className="relative">
                   <FileText className="absolute left-4 top-3.5 text-gray-400" size={18} />
                   <input required type="text" placeholder="What was bought?" value={item} onChange={(e) => setItem(e.target.value)} className={`${inputStyle} pl-11`} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Cost</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cost</label>
                 <div className="relative">
                    <span className="absolute left-4 top-3 text-gray-400 font-bold text-lg">৳</span>
                   <input required type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputStyle} pl-11`} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Description (Optional)</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Description (Optional)</label>
                 <textarea placeholder="Details..." value={description} onChange={(e) => setDescription(e.target.value)} className={`${inputStyle} resize-none h-24`} />
               </div>
             </>
           )}
 
-           {/* --- TRIP FORM (Updated with Dates) --- */}
+           {/* --- TRIP FORM --- */}
            {type === 'trip' && (
             <>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Trip Name</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Trip Name</label>
                 <input required type="text" placeholder="e.g. Cox's Bazar 2024" value={name} onChange={(e) => setName(e.target.value)} className={inputStyle} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Start Date (Optional)</label>
-                  <div className="relative">
-                    <CalendarIcon className="absolute left-4 top-3.5 text-gray-400" size={18} />
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className={`${inputStyle} pl-11 text-sm`}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">End Date (Optional)</label>
-                  <div className="relative">
-                    <CalendarIcon className="absolute left-4 top-3.5 text-gray-400" size={18} />
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className={`${inputStyle} pl-11 text-sm`}
-                    />
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 gap-5">
+                <ModernDatePicker
+                  label="Start Date"
+                  value={startDate}
+                  onChange={setStartDate}
+                />
+                <ModernDatePicker
+                  label="End Date"
+                  value={endDate}
+                  onChange={setEndDate}
+                />
               </div>
             </>
           )}
 
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
+          <div className="flex gap-4 pt-4">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 bg-[#41644A] text-white font-medium rounded-xl hover:bg-[#2e4a34] transition-all"
+              className="flex-1 px-4 py-3 bg-[#41644A] text-white font-bold rounded-xl hover:bg-[#2e4a34] transition-all"
             >
               {initialData ? 'Update' : 'Save'}
             </button>

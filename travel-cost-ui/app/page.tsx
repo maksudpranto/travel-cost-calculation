@@ -62,16 +62,41 @@ export default function Dashboard() {
   const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip', id: number } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
 
-  // --- CALCULATIONS ---
+  // --- CALCULATIONS (UPDATED) ---
   const stats = useMemo(() => {
-    if (!activeTrip) return { totalDeposits: 0, totalExpenses: 0, remaining: 0, avgCost: 0, maxCost: 0, minCost: 0 };
+    if (!activeTrip) return {
+      totalDeposits: 0,
+      totalExpenses: 0,
+      remaining: 0,
+      avgCost: 0,
+      maxCost: 0,
+      minCost: 0,
+      maxExpenseName: '-',
+      minExpenseName: '-'
+    };
+
     const totalDeposits = activeTrip.people.reduce((sum, p) => sum + p.deposit, 0);
     const totalExpenses = activeTrip.expenses.reduce((sum, e) => sum + e.amount, 0);
-    const expenseAmounts = activeTrip.expenses.map(e => e.amount);
-    const maxCost = expenseAmounts.length > 0 ? Math.max(...expenseAmounts) : 0;
-    const minCost = expenseAmounts.length > 0 ? Math.min(...expenseAmounts) : 0;
 
-    return { totalDeposits, totalExpenses, remaining: totalDeposits - totalExpenses, avgCost: activeTrip.people.length > 0 ? totalExpenses / activeTrip.people.length : 0, maxCost, minCost };
+    // Calculate Max and Min Expense Objects
+    let maxExpense = null;
+    let minExpense = null;
+
+    if (activeTrip.expenses.length > 0) {
+      maxExpense = activeTrip.expenses.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
+      minExpense = activeTrip.expenses.reduce((prev, current) => (prev.amount < current.amount) ? prev : current);
+    }
+
+    return {
+      totalDeposits,
+      totalExpenses,
+      remaining: totalDeposits - totalExpenses,
+      avgCost: activeTrip.people.length > 0 ? totalExpenses / activeTrip.people.length : 0,
+      maxCost: maxExpense ? maxExpense.amount : 0,
+      minCost: minExpense ? minExpense.amount : 0,
+      maxExpenseName: maxExpense ? maxExpense.item : '-',
+      minExpenseName: minExpense ? minExpense.item : '-'
+    };
   }, [activeTrip]);
 
   // --- HELPER: Format Date ---
@@ -180,23 +205,28 @@ export default function Dashboard() {
         <div className="w-full max-w-[96%] mx-auto space-y-6">
 
           <header className="bg-white rounded-xl border border-gray-100 p-4 flex justify-between items-center shadow-sm w-full">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-3">
-                <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"><Menu size={24} /></button>
-                <h2 className="text-xl font-bold">{activeTrip ? activeTrip.name : "Welcome"}</h2>
-                {/* REMOVED BDT BADGE HERE */}
-              </div>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"><Menu size={24} /></button>
 
-              {/* DATE DISPLAY */}
-              {activeTrip?.startDate && (
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium ml-1">
-                  <Calendar size={12} className="text-gray-400" />
-                  <span>
-                    {formatDate(activeTrip.startDate)}
-                    {activeTrip.endDate ? ` - ${formatDate(activeTrip.endDate)}` : ''}
-                  </span>
-                </div>
-              )}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {activeTrip ? activeTrip.name : "Welcome"}
+                </h2>
+
+                {activeTrip?.startDate && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                    <span className="hidden sm:inline text-gray-300 text-lg font-light">|</span>
+
+                    <div className="flex items-center gap-1.5">
+                      <Calendar size={14} className="text-gray-400" />
+                      <span>
+                        {formatDate(activeTrip.startDate)}
+                        {activeTrip.endDate ? ` - ${formatDate(activeTrip.endDate)}` : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-3">
