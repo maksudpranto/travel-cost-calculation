@@ -1,6 +1,6 @@
 // components/SummaryGrid.tsx
 import React from 'react';
-import { Wallet, Receipt, Coins, Users, LucideIcon } from "lucide-react";
+import { Wallet, Receipt, Coins, Users, TrendingUp, TrendingDown, LucideIcon } from "lucide-react";
 
 interface SummaryGridProps {
   stats: {
@@ -8,6 +8,8 @@ interface SummaryGridProps {
     totalExpenses: number;
     remaining: number;
     avgCost: number;
+    maxCost: number; // New Prop
+    minCost: number; // New Prop
   };
 }
 
@@ -42,21 +44,20 @@ const StatItem = ({
 
 export const SummaryGrid = ({ stats }: SummaryGridProps) => {
   return (
-    // MODERN CONTAINER
     <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
       <h3 className="text-lg font-bold text-gray-800 mb-5">Trip Summary</h3>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Total Deposits (Emerald) */}
+        {/* Total Pot */}
         <StatItem
-          label="Total Deposits"
+          label="Total Pot"
           value={stats.totalDeposits.toLocaleString()}
           icon={Wallet}
           iconColor="text-emerald-600"
           iconBg="bg-emerald-100"
         />
 
-        {/* Total Expenses (Rose) */}
+        {/* Total Spent */}
         <StatItem
           label="Total Spent"
           value={stats.totalExpenses.toLocaleString()}
@@ -65,7 +66,7 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
           iconBg="bg-rose-100"
         />
 
-        {/* Remaining Fund (Blue) - CHANGED ICON TO COINS */}
+        {/* Remaining */}
         <StatItem
           label="Remaining"
           value={stats.remaining.toLocaleString()}
@@ -74,13 +75,31 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
           iconBg="bg-blue-100"
         />
 
-        {/* Avg Cost (Purple) */}
+        {/* Avg Cost */}
         <StatItem
-          label="Average Cost"
+          label="Cost / Person"
           value={Math.round(stats.avgCost).toLocaleString()}
           icon={Users}
           iconColor="text-purple-600"
           iconBg="bg-purple-100"
+        />
+
+        {/* --- NEW: MAX COST --- */}
+        <StatItem
+          label="Max Expense"
+          value={stats.maxCost.toLocaleString()}
+          icon={TrendingUp}
+          iconColor="text-orange-600"
+          iconBg="bg-orange-100"
+        />
+
+        {/* --- NEW: MIN COST --- */}
+        <StatItem
+          label="Min Expense"
+          value={stats.minCost.toLocaleString()}
+          icon={TrendingDown}
+          iconColor="text-teal-600"
+          iconBg="bg-teal-100"
         />
       </div>
     </div>

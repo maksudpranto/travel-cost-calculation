@@ -1,21 +1,22 @@
-// app/types.ts
-export type Person = {
+export interface Person {
   id: number;
   name: string;
   deposit: number;
-};
+}
 
-export type Expense = {
+export interface Expense {
   id: number;
   item: string;
-  description: string;
   amount: number;
-};
+  description?: string;
+}
 
-export type Trip = {
+export interface Trip {
   id: number;
   name: string;
   currency: string;
+  startDate?: string; // New field
+  endDate?: string;   // New field
   people: Person[];
   expenses: Expense[];
-};
+}
