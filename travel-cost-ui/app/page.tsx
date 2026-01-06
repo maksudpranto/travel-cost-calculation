@@ -3,7 +3,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Download, Menu, Map, Calculator, ArrowUp, Calendar } from "lucide-react";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
+// --- COMPONENT IMPORTS ---
 import { Trip } from './types';
 import { Sidebar } from './components/Sidebar';
 import { AddModal, DeleteConfirmModal } from './components/Modals';
@@ -11,6 +13,7 @@ import { PeopleCard } from './components/PeopleCard';
 import { ExpensesCard } from './components/ExpensesCard';
 import { BalancesCard } from './components/BalancesCard';
 import { SummaryGrid } from './components/SummaryGrid';
+import { useAuth } from './context/AuthContext';
 
 const globalStyles = `
   input[type=number]::-webkit-inner-spin-button,
@@ -23,6 +26,17 @@ const globalStyles = `
 `;
 
 export default function Dashboard() {
+  // --- AUTH PROTECTION ---
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, router]);
+
+  // --- APP STATE ---
   const [trips, setTrips] = useState<Trip[]>([]);
   const [activeTripId, setActiveTripId] = useState<number>(0);
   const activeTrip = trips.find(t => t.id === activeTripId) || trips[0];
@@ -62,7 +76,7 @@ export default function Dashboard() {
   const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip', id: number } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
 
-  // --- CALCULATIONS (UPDATED) ---
+  // --- CALCULATIONS ---
   const stats = useMemo(() => {
     if (!activeTrip) return {
       totalDeposits: 0,
@@ -78,7 +92,7 @@ export default function Dashboard() {
     const totalDeposits = activeTrip.people.reduce((sum, p) => sum + p.deposit, 0);
     const totalExpenses = activeTrip.expenses.reduce((sum, e) => sum + e.amount, 0);
 
-    // Calculate Max and Min Expense Objects
+    // Find Max and Min Expense Objects to get Name & Amount
     let maxExpense = null;
     let minExpense = null;
 
@@ -171,6 +185,8 @@ export default function Dashboard() {
     setItemToDelete(null);
   };
 
+  // If not authenticated, return null (prevents flashing content before redirect)
+  if (!isAuthenticated) return null;
   if (!isLoaded) return null;
 
   return (

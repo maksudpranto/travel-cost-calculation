@@ -62,7 +62,7 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
 
       <div className="grid grid-cols-2 gap-4">
         <StatItem
-          label="Total Pot"
+          label="Total Deposits"
           value={stats.totalDeposits.toLocaleString()}
           icon={Wallet}
           iconColor="text-emerald-600"
@@ -78,7 +78,7 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
         />
 
         <StatItem
-          label="Remaining"
+          label="Remaining Money"
           value={stats.remaining.toLocaleString()}
           icon={Coins}
           iconColor="text-blue-600"
@@ -86,7 +86,7 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
         />
 
         <StatItem
-          label="Cost / Person"
+          label="Average Cost Per Person"
           value={Math.round(stats.avgCost).toLocaleString()}
           icon={Users}
           iconColor="text-purple-600"
