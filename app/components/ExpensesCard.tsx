@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Pencil, Trash2, ShoppingBag } from "lucide-react";
-import { Expense } from '../types';
+import { Expense } from '../type';
 
 interface ExpensesCardProps {
   expenses: Expense[];

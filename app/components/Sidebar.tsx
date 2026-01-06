@@ -1,6 +1,6 @@
 import React from 'react';
 import { Map, Edit2, Trash2, LogOut, User as UserIcon } from 'lucide-react';
-import { Trip } from '../types';
+import { Trip } from '../type';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { Person } from '../types';
+import { Person } from '../type';
 
 interface PeopleCardProps {
   people: Person[];
