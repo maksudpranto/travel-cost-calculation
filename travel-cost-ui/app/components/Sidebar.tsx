@@ -1,8 +1,8 @@
 import React from 'react';
-import { Map, Edit2, Trash2, LogOut, User as UserIcon, ChevronRight } from 'lucide-react';
+import { Map, Edit2, Trash2, LogOut, User as UserIcon } from 'lucide-react';
 import { Trip } from '../types';
 import { useAuth } from '../context/AuthContext';
-import Link from 'next/link'; // Import Link
+import Link from 'next/link';
 
 interface SidebarProps {
   trips: Trip[];
@@ -30,7 +30,6 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
 
-        {/* Header */}
         <div className="p-6 flex items-center gap-3 border-b border-gray-50">
           <div className="w-10 h-10 bg-[#41644A] rounded-xl flex items-center justify-center shadow-sm">
             <Map className="text-white" size={20} />
@@ -38,7 +37,6 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
           <h1 className="text-xl font-bold text-gray-800 tracking-tight">Trip Manager</h1>
         </div>
 
-        {/* Trip List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           <div className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">Your Trips</div>
 
@@ -81,13 +79,11 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
           )}
         </div>
 
-        {/* --- CLICKABLE PROFILE FOOTER --- */}
+        {/* --- PROFILE FOOTER --- */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-           {/* Wrap container in Link to /profile */}
            <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-100 shadow-sm relative group">
 
               <Link href="/profile" className="flex flex-1 items-center gap-3 min-w-0 cursor-pointer">
-                {/* User Avatar - Shows Image if exists, else Icon */}
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#41644A] to-[#2e4a34] flex items-center justify-center text-white shadow-md overflow-hidden shrink-0">
                    {currentUser?.profilePicture ? (
                      <img src={currentUser.profilePicture} alt="User" className="w-full h-full object-cover" />
@@ -96,7 +92,6 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
                    )}
                 </div>
 
-                {/* User Info */}
                 <div className="flex-1 min-w-0">
                    <p className="text-sm font-bold text-gray-900 truncate group-hover:text-[#41644A] transition-colors">
                       {currentUser?.username || 'User'}
@@ -107,10 +102,10 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
                 </div>
               </Link>
 
-              {/* Logout Button (Stop Propagation to prevent navigation when clicking logout) */}
+              {/* UPDATED LOGOUT BUTTON: Added explicit cursor-pointer and hover background */}
               <button
                 onClick={(e) => { e.stopPropagation(); logout(); }}
-                className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors z-10"
+                className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors z-10 cursor-pointer"
                 title="Sign Out"
               >
                 <LogOut size={18} />

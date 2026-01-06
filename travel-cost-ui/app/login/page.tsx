@@ -35,7 +35,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 animate-in fade-in zoom-in duration-300">
 
-        {/* Logo */}
         <div className="w-16 h-16 bg-[#41644A]/10 rounded-full flex items-center justify-center mx-auto mb-6">
           <Map className="text-[#41644A]" size={32} />
         </div>
@@ -46,39 +45,26 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="relative">
             <User className="absolute left-4 top-3.5 text-gray-400" size={18} />
-            <input
-              required
-              type="text" // Type text allows both email and numbers
-              placeholder="Email or Phone Number"
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-              className={inputStyle}
-            />
+            <input required type="text" placeholder="Email or Phone Number" value={contact} onChange={(e) => setContact(e.target.value)} className={inputStyle} />
           </div>
 
           <div className="relative">
             <Lock className="absolute left-4 top-3.5 text-gray-400" size={18} />
-            <input
-              required
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputStyle}
-            />
+            <input required type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputStyle} />
           </div>
 
           <div className="flex justify-end">
-            <Link href="/forgot-password" class="text-xs font-medium text-gray-500 hover:text-[#41644A] transition-colors">
+            <Link href="/forgot-password" class="text-xs font-medium text-gray-500 hover:text-[#41644A] transition-colors cursor-pointer">
               Forgot Password?
             </Link>
           </div>
 
           {error && <p className="text-rose-500 text-sm text-center font-medium animate-pulse">{error}</p>}
 
+          {/* UPDATED BUTTON STYLE: Added cursor-pointer, shadow, and hover scaling */}
           <button
             type="submit" disabled={isLoading}
-            className="w-full bg-[#41644A] hover:bg-[#2e4a34] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70"
+            className="w-full bg-[#41644A] hover:bg-[#2e4a34] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 cursor-pointer shadow-md hover:shadow-lg"
           >
             {isLoading ? 'Signing in...' : 'Sign In'} <ArrowRight size={18} />
           </button>
@@ -86,7 +72,7 @@ export default function LoginPage() {
 
         <div className="mt-8 pt-6 border-t border-gray-100 text-center">
           <p className="text-gray-500 text-sm">
-            Don't have an account? <Link href="/register" className="text-[#41644A] font-bold hover:underline">Sign up</Link>
+            Don't have an account? <Link href="/register" className="text-[#41644A] font-bold hover:underline cursor-pointer">Sign up</Link>
           </p>
         </div>
       </div>

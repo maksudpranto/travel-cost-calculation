@@ -7,7 +7,8 @@ export interface User {
   contact: string;
   username: string;
   password: string;
-  profilePicture?: string; // New field for Base64 image string
+  profilePicture?: string;
+  address?: string; // --- NEW FIELD ---
 }
 
 interface AuthContextType {
@@ -16,7 +17,7 @@ interface AuthContextType {
   login: (contact: string, pass: string) => Promise<{ success: boolean; message: string }>;
   register: (contact: string, username: string, pass: string) => Promise<{ success: boolean; message: string }>;
   resetPassword: (contact: string, newPass: string) => Promise<{ success: boolean; message: string }>;
-  updateProfile: (data: Partial<User>) => Promise<{ success: boolean; message: string }>; // New Function
+  updateProfile: (data: Partial<User>) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   checkContactExists: (contact: string) => boolean;
 }
@@ -37,7 +38,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const router = useRouter();
 
-  // Load session on mount
   useEffect(() => {
     const sessionContact = localStorage.getItem('trip_manager_session');
     const users = JSON.parse(localStorage.getItem('trip_manager_users') || '[]');
@@ -89,7 +89,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { success: true, message: 'Password updated successfully' };
   };
 
-  // --- NEW: Update Profile Function ---
   const updateProfile = async (data: Partial<User>) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     if (!currentUser) return { success: false, message: 'No active session' };
@@ -109,7 +108,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Update session state
     setCurrentUser(updatedUser);
 
-    // If contact changed, update session key
     if (data.contact) {
       localStorage.setItem('trip_manager_session', data.contact);
     }
