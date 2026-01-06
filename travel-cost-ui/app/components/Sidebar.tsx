@@ -19,13 +19,19 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
 
   return (
     <>
+      {/* FIX 1: LOWERED Z-INDEX
+         Changed z-40 to z-30 so it sits below the sidebar (z-40) and modals (z-50)
+      */}
       <div
-        className={`fixed inset-0 bg-black/20 z-40 md:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black/20 z-30 md:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
+      {/* FIX 2: LOWERED Z-INDEX
+         Changed z-50 to z-40. Now it is BELOW the Modal (which is z-50)
+      */}
       <aside className={`
-        fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-gray-100 z-50
+        fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-gray-100 z-40
         transform transition-transform duration-300 ease-in-out flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
@@ -79,7 +85,7 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
           )}
         </div>
 
-        {/* --- PROFILE FOOTER --- */}
+        {/* PROFILE FOOTER */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
            <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-100 shadow-sm relative group">
 
@@ -102,7 +108,6 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
                 </div>
               </Link>
 
-              {/* UPDATED LOGOUT BUTTON: Added explicit cursor-pointer and hover background */}
               <button
                 onClick={(e) => { e.stopPropagation(); logout(); }}
                 className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors z-10 cursor-pointer"
