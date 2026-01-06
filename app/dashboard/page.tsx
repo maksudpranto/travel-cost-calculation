@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 // --- IMPORTANT: UPDATED IMPORTS (added ../) ---
-import { Trip } from '../types';
+import { Trip } from '../type';
 import { Sidebar } from '../components/Sidebar';
 import { AddModal, DeleteConfirmModal } from '../components/Modals';
 import { PeopleCard } from '../components/PeopleCard';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Person } from '../types';
+import { Person } from '../type';
 
 interface BalancesCardProps {
   people: Person[];
