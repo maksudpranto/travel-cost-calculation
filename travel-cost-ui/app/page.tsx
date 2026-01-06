@@ -1,295 +1,214 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Download, Menu, Map, Calculator, ArrowUp, Calendar } from "lucide-react";
+import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Map, ArrowRight, CheckCircle2, Wallet, Users, BarChart3, ShieldCheck } from 'lucide-react';
 
-// --- COMPONENT IMPORTS ---
-import { Trip } from './types';
-import { Sidebar } from './components/Sidebar';
-import { AddModal, DeleteConfirmModal } from './components/Modals';
-import { PeopleCard } from './components/PeopleCard';
-import { ExpensesCard } from './components/ExpensesCard';
-import { BalancesCard } from './components/BalancesCard';
-import { SummaryGrid } from './components/SummaryGrid';
-import { useAuth } from './context/AuthContext';
-
-const globalStyles = `
-  input[type=number]::-webkit-inner-spin-button,
-  input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  input[type=number] { -moz-appearance: textfield; }
-  html { scroll-behavior: smooth; }
-`;
-
-export default function Dashboard() {
-  // --- AUTH PROTECTION ---
-  const { isAuthenticated } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
-
-  // --- APP STATE ---
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [activeTripId, setActiveTripId] = useState<number>(0);
-  const activeTrip = trips.find(t => t.id === activeTripId) || trips[0];
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  // --- SCROLL TO TOP STATE ---
-  const [showScrollTop, setShowScrollTop] = useState(false);
-
-  // --- PERSISTENCE ---
-  useEffect(() => {
-    const saved = localStorage.getItem('travel_split_data');
-    if (saved) setTrips(JSON.parse(saved));
-    setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded) localStorage.setItem('travel_split_data', JSON.stringify(trips));
-  }, [trips, isLoaded]);
-
-  useEffect(() => {
-    if (isLoaded && trips.length > 0 && activeTripId === 0) setActiveTripId(trips[0].id);
-  }, [isLoaded, trips, activeTripId]);
-
-  // --- SCROLL LISTENER ---
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // --- UI STATES ---
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip'>('expense');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip', id: number } | null>(null);
-  const [editingItem, setEditingItem] = useState<any>(null);
-
-  // --- CALCULATIONS ---
-  const stats = useMemo(() => {
-    if (!activeTrip) return {
-      totalDeposits: 0,
-      totalExpenses: 0,
-      remaining: 0,
-      avgCost: 0,
-      maxCost: 0,
-      minCost: 0,
-      maxExpenseName: '-',
-      minExpenseName: '-'
-    };
-
-    const totalDeposits = activeTrip.people.reduce((sum, p) => sum + p.deposit, 0);
-    const totalExpenses = activeTrip.expenses.reduce((sum, e) => sum + e.amount, 0);
-
-    // Find Max and Min Expense Objects to get Name & Amount
-    let maxExpense = null;
-    let minExpense = null;
-
-    if (activeTrip.expenses.length > 0) {
-      maxExpense = activeTrip.expenses.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
-      minExpense = activeTrip.expenses.reduce((prev, current) => (prev.amount < current.amount) ? prev : current);
-    }
-
-    return {
-      totalDeposits,
-      totalExpenses,
-      remaining: totalDeposits - totalExpenses,
-      avgCost: activeTrip.people.length > 0 ? totalExpenses / activeTrip.people.length : 0,
-      maxCost: maxExpense ? maxExpense.amount : 0,
-      minCost: minExpense ? minExpense.amount : 0,
-      maxExpenseName: maxExpense ? maxExpense.item : '-',
-      minExpenseName: minExpense ? minExpense.item : '-'
-    };
-  }, [activeTrip]);
-
-  // --- HELPER: Format Date ---
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  // --- HANDLERS ---
-  const handleAddClick = (type: 'person' | 'expense' | 'trip') => { setEditingItem(null); setModalType(type); setModalOpen(true); };
-  const handleEditItem = (type: 'person' | 'expense' | 'trip', item: any) => { setEditingItem(item); setModalType(type); setModalOpen(true); };
-  const handleDeleteItem = (type: 'person' | 'expense' | 'trip', id: number) => { setItemToDelete({ type, id }); };
-
-  const handleScrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleExport = () => {
-    if (!activeTrip) return;
-    let csvContent = "data:text/csv;charset=utf-8,";
-    const dateRange = activeTrip.startDate ? `(${activeTrip.startDate} to ${activeTrip.endDate || '...'})` : '';
-    csvContent += `TRIP REPORT: ${activeTrip.name} ${dateRange} (${activeTrip.currency})\n\nSUMMARY\nTotal Deposits,${stats.totalDeposits}\nTotal Expenses,${stats.totalExpenses}\nRemaining Fund,${stats.remaining}\nCost Per Person,${Math.round(stats.avgCost)}\n\nPEOPLE & DEPOSITS\nName,Deposit,Status,Amount\n`;
-    activeTrip.people.forEach(p => {
-        const balance = p.deposit - stats.avgCost;
-        const status = balance > 0 ? "Refund" : (balance < 0 ? "Owes" : "Settled");
-        csvContent += `${p.name},${p.deposit},${status},${Math.round(Math.abs(balance))}\n`;
-    });
-    csvContent += `\nEXPENSES\nItem,Description,Cost\n`;
-    activeTrip.expenses.forEach(e => { csvContent += `${e.item},${e.description},${e.amount}\n`; });
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${activeTrip.name.replace(/\s+/g, '_')}_Report.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const saveData = (data: any) => {
-    if (modalType === 'trip') {
-      if (editingItem) {
-        setTrips(trips.map(t => t.id === editingItem.id ? { ...t, name: data.name, startDate: data.startDate, endDate: data.endDate } : t));
-      } else {
-        const newTrip: Trip = { id: Date.now(), name: data.name, currency: "BDT", startDate: data.startDate, endDate: data.endDate, people: [], expenses: [] };
-        setTrips([...trips, newTrip]);
-        setActiveTripId(newTrip.id);
-      }
-    } else {
-      setTrips(trips.map(t => {
-        if (t.id !== activeTripId) return t;
-        if (modalType === 'person') {
-          return editingItem ? { ...t, people: t.people.map(p => p.id === editingItem.id ? { ...p, ...data } : p) } : { ...t, people: [...t.people, { id: Date.now(), ...data }] };
-        } else {
-          return editingItem ? { ...t, expenses: t.expenses.map(e => e.id === editingItem.id ? { ...e, ...data } : e) } : { ...t, expenses: [...t.expenses, { id: Date.now(), ...data }] };
-        }
-      }));
-    }
-    setEditingItem(null);
-  };
-
-  const confirmDelete = () => {
-    if (!itemToDelete) return;
-    if (itemToDelete.type === 'trip') {
-      const newTrips = trips.filter(t => t.id !== itemToDelete.id); setTrips(newTrips);
-      if (activeTripId === itemToDelete.id) setActiveTripId(newTrips[0]?.id || 0);
-    } else {
-      setTrips(trips.map(t => {
-        if (t.id !== activeTripId) return t;
-        return itemToDelete.type === 'person' ? { ...t, people: t.people.filter(p => p.id !== itemToDelete.id) } : { ...t, expenses: t.expenses.filter(e => e.id !== itemToDelete.id) };
-      }));
-    }
-    setItemToDelete(null);
-  };
-
-  // If not authenticated, return null (prevents flashing content before redirect)
-  if (!isAuthenticated) return null;
-  if (!isLoaded) return null;
-
+export default function LandingPage() {
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900">
-      <style>{globalStyles}</style>
-      <AddModal isOpen={modalOpen} onClose={() => setModalOpen(false)} type={modalType} onSave={saveData} initialData={editingItem} />
-      <DeleteConfirmModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} title={itemToDelete?.type === 'trip' ? "Delete Trip?" : "Are you sure?"} message={itemToDelete?.type === 'trip' ? "This will delete the trip and all data." : undefined} />
+    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-[#41644A] selection:text-white">
 
-      {/* --- BACK TO TOP BUTTON --- */}
-      <button
-        onClick={handleScrollToTop}
-        className={`fixed bottom-8 right-8 bg-[#41644A] text-white p-3 rounded-full shadow-lg hover:bg-[#2e4a34] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${
-          showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-        }`}
-      >
-        <ArrowUp size={24} />
-      </button>
+      {/* --- NAVBAR --- */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
-      <Sidebar
-        trips={trips}
-        activeTripId={activeTripId}
-        onSelectTrip={setActiveTripId}
-        onEditTrip={(trip: Trip) => handleEditItem('trip', trip)}
-        onDeleteTrip={(trip: Trip) => handleDeleteItem('trip', trip.id)}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#41644A] rounded-xl flex items-center justify-center text-white shadow-sm">
+              <Map size={22} />
+            </div>
+            <span className="text-xl font-bold tracking-tight text-gray-900">Trip Manager</span>
+          </div>
 
-      <main className="md:ml-64 flex-1 p-8">
+          {/* Buttons */}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="hidden sm:block text-sm font-semibold text-gray-600 hover:text-[#41644A] transition-colors"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/register"
+              className="px-5 py-2.5 bg-[#41644A] text-white text-sm font-bold rounded-xl hover:bg-[#2e4a34] transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+            >
+              Get Started <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </nav>
 
-        {/* --- MASTER CONTAINER --- */}
-        <div className="w-full max-w-[96%] mx-auto space-y-6">
+      {/* --- HERO SECTION --- */}
+      <section className="pt-32 pb-20 px-6">
+        <div className="max-w-4xl mx-auto text-center space-y-8">
 
-          <header className="bg-white rounded-xl border border-gray-100 p-4 flex justify-between items-center shadow-sm w-full">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"><Menu size={24} /></button>
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-xs font-bold uppercase tracking-wider border border-green-100 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            The #1 Travel Expense Tracker
+          </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {activeTrip ? activeTrip.name : "Welcome"}
-                </h2>
+          {/* Headline */}
+          <h1 className="text-5xl sm:text-7xl font-extrabold text-gray-900 tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-8 duration-700">
+            Split Trip Costs <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#41644A] to-emerald-600">
+              Without the Drama
+            </span>
+          </h1>
 
-                {activeTrip?.startDate && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                    <span className="hidden sm:inline text-gray-300 text-lg font-light">|</span>
+          {/* Subheadline */}
+          <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100">
+            Stop arguing about who paid for dinner. Track expenses, calculate balances, and settle debts instantly with Trip Manager.
+          </p>
 
-                    <div className="flex items-center gap-1.5">
-                      <Calendar size={14} className="text-gray-400" />
-                      <span>
-                        {formatDate(activeTrip.startDate)}
-                        {activeTrip.endDate ? ` - ${formatDate(activeTrip.endDate)}` : ''}
-                      </span>
-                    </div>
-                  </div>
-                )}
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+            <Link
+              href="/register"
+              className="w-full sm:w-auto px-8 py-4 bg-[#41644A] text-white font-bold rounded-2xl hover:bg-[#2e4a34] hover:scale-105 transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-2"
+            >
+              Start Tracking Free
+            </Link>
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-8 py-4 bg-white text-gray-700 border border-gray-200 font-bold rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
+            >
+               Sign In
+            </Link>
+          </div>
+
+          {/* Trust Text */}
+          <p className="text-sm text-gray-400 pt-4">No credit card required · Free forever</p>
+        </div>
+      </section>
+
+      {/* --- VISUAL MOCKUP --- */}
+      <section className="px-4 pb-24">
+        <div className="max-w-5xl mx-auto bg-gray-900 rounded-2xl p-2 sm:p-4 shadow-2xl ring-1 ring-gray-900/10">
+           <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 relative aspect-video flex items-center justify-center">
+              {/* Abstract Representation of Dashboard */}
+              <div className="absolute inset-0 bg-white flex flex-col items-center justify-center text-gray-300 space-y-4">
+                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                    <BarChart3 size={32} />
+                 </div>
+                 <p className="font-medium text-gray-400">Your Dashboard Preview</p>
               </div>
+
+              {/* Optional: You can replace the div above with an actual screenshot:
+                  <img src="/dashboard-screenshot.png" className="w-full h-full object-cover" />
+              */}
+           </div>
+        </div>
+      </section>
+
+      {/* --- FEATURES GRID --- */}
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to stay on budget</h2>
+            <p className="text-gray-500">We handle the math so you can handle the adventure.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+              <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
+                <Wallet size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Track Expenses</h3>
+              <p className="text-gray-500 leading-relaxed">
+                Log every coffee, ticket, and meal. We categorize and organize everything for you instantly.
+              </p>
             </div>
 
-            <div className="flex gap-3">
-              <Link href="/bulk_calculation">
-                <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"><Calculator size={16} /> Calculator</button>
-              </Link>
-              {activeTrip && <button onClick={handleExport} className="flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"><Download size={16} /> Export</button>}
-              <button
-                onClick={() => handleAddClick('trip')}
-                className="flex items-center gap-2 px-6 py-2 bg-[#41644A] text-white rounded-lg text-sm font-medium hover:bg-[#2e4a34] transition shadow-sm"
-              >
-                <Plus size={16} /> New Trip
-              </button>
+            {/* Feature 2 */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+              <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
+                <Users size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Split Costs</h3>
+              <p className="text-gray-500 leading-relaxed">
+                Add friends to your trip. We automatically calculate who owes who, down to the last cent.
+              </p>
             </div>
-          </header>
 
-          {activeTrip ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <PeopleCard
-                people={activeTrip.people}
-                onAdd={() => handleAddClick('person')}
-                onEdit={(p) => handleEditItem('person', p)}
-                onDelete={(id) => handleDeleteItem('person', id)}
-              />
-              <ExpensesCard
-                expenses={activeTrip.expenses}
-                onAdd={() => handleAddClick('expense')}
-                onEdit={(e) => handleEditItem('expense', e)}
-                onDelete={(id) => handleDeleteItem('expense', id)}
-              />
-              <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
-            </div>
-            <div className="space-y-6">
-              <SummaryGrid stats={stats} />
+            {/* Feature 3 */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+              <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform">
+                <ShieldCheck size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Secure & Private</h3>
+              <p className="text-gray-500 leading-relaxed">
+                Your data is stored locally on your device or securely in your account. You are in control.
+              </p>
             </div>
           </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-96 text-gray-400 text-center">
-              <Map size={48} className="mb-4 opacity-20" />
-              <p className="mb-4">No trips found. Create one to get started!</p>
-              <button onClick={() => handleAddClick('trip')} className="flex items-center gap-2 px-6 py-3 bg-[#41644A] text-white rounded-xl text-sm font-medium hover:bg-[#2e4a34] transition shadow-sm"><Plus size={18} /> Create First Trip</button>
-            </div>
-          )}
-
         </div>
-      </main>
+      </section>
+
+      {/* --- HOW IT WORKS --- */}
+      <section className="py-24 bg-white">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-16">How it works</h2>
+
+          <div className="space-y-12">
+            {[
+              { title: 'Create a Trip', desc: 'Give your trip a name, set dates, and invite your friends.', step: '01' },
+              { title: 'Log Expenses', desc: 'Anyone can add expenses. We support multiple currencies and categories.', step: '02' },
+              { title: 'Settle Up', desc: 'See a clear summary of debts. One click to see who pays whom.', step: '03' }
+            ].map((item, i) => (
+              <div key={i} className="flex gap-6 md:gap-10 items-start">
+                <div className="text-4xl font-black text-gray-100 leading-none select-none">
+                  {item.step}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-gray-500">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- CTA BOTTOM --- */}
+      <section className="py-24 px-6 bg-[#41644A]">
+        <div className="max-w-4xl mx-auto text-center text-white">
+          <h2 className="text-3xl md:text-5xl font-bold mb-8">Ready to travel stress-free?</h2>
+          <p className="text-green-100 text-lg mb-10 max-w-2xl mx-auto">
+            Join thousands of travelers who trust Trip Manager to handle their finances while they enjoy the view.
+          </p>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-[#41644A] font-bold rounded-2xl hover:bg-gray-100 hover:scale-105 transition-all shadow-xl"
+          >
+            Create Your Free Account <ArrowRight size={18} />
+          </Link>
+        </div>
+      </section>
+
+      {/* --- FOOTER --- */}
+      <footer className="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#41644A] rounded-lg flex items-center justify-center text-white">
+               <Map size={16} />
+            </div>
+            <span className="text-lg font-bold text-gray-100">Trip Manager</span>
+          </div>
+
+          <div className="flex gap-8 text-sm font-medium">
+            <a href="#" className="hover:text-white transition-colors">Features</a>
+            <a href="#" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#" className="hover:text-white transition-colors">About</a>
+            <a href="#" className="hover:text-white transition-colors">Contact</a>
+          </div>
+
+          <p className="text-xs text-gray-600">© 2024 Trip Manager Inc.</p>
+        </div>
+      </footer>
+
     </div>
   );
 }
