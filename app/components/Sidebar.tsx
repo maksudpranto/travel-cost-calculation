@@ -42,7 +42,7 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
             </div>
             <h1 className="text-xl font-bold text-gray-800 tracking-tight">Trip Manager</h1>
           </div>
-          <button onClick={onClose} className="md:hidden text-gray-400 hover:text-gray-600 p-1">
+          <button onClick={onClose} className="cursor-pointer md:hidden text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded-lg transition-colors">
             <X size={24} />
           </button>
         </div>
@@ -71,10 +71,15 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
                 </div>
 
                 <div className={`flex items-center gap-1 ${activeTripId === trip.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                  {/* Logout Removed */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEditTrip(trip); }}
+                    className="cursor-pointer p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-blue-600 hover:shadow-sm active:scale-95 transition-all"
+                  >
+                    <Edit2 size={14} />
+                  </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); }}
-                    className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-rose-600 transition-colors"
+                    className="cursor-pointer p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-rose-600 hover:shadow-sm active:scale-95 transition-all"
                   >
                     <Trash2 size={14} />
                   </button>
