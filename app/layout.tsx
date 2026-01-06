@@ -1,6 +1,6 @@
 // File: app/layout.tsx
 import './globals.css';
-import { AuthProvider } from './context/AuthContext';
+
 
 export const metadata = {
   title: 'Trip Cost Manager',
@@ -14,10 +14,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <body className="antialiased" suppressHydrationWarning={true}>
+        {children}
       </body>
     </html>
   );

@@ -155,7 +155,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
           <h3 className="text-xl font-bold text-gray-800">
             {initialData ? 'Edit' : 'Add'} {type === 'person' ? 'Person' : type === 'expense' ? 'Expense' : 'Trip'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 hover:bg-gray-100/50 p-2 rounded-lg transition-colors">
             <X size={24} />
           </button>
         </div>
@@ -196,7 +196,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Cost</label>
                 <div className="relative">
-                   <span className="absolute left-4 top-3 text-gray-400 font-bold text-lg">৳</span>
+                  <span className="absolute left-4 top-3 text-gray-400 font-bold text-lg">৳</span>
                   <input required type="number" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputStyle} pl-11`} />
                 </div>
               </div>
@@ -207,8 +207,8 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
             </>
           )}
 
-           {/* --- TRIP FORM --- */}
-           {type === 'trip' && (
+          {/* --- TRIP FORM --- */}
+          {type === 'trip' && (
             <>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Trip Name</label>
@@ -231,10 +231,10 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
           )}
 
           <div className="flex gap-4 pt-4">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
+            <button type="button" onClick={onClose} className="cursor-pointer flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 hover:shadow-inner active:scale-95 transition-all">Cancel</button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-[#41644A] text-white font-bold rounded-xl hover:bg-[#2e4a34] transition-all"
+              className="cursor-pointer flex-1 px-4 py-3 bg-[#41644A] text-white font-bold rounded-xl hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all"
             >
               {initialData ? 'Update' : 'Save'}
             </button>
@@ -254,8 +254,8 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, title, message 
         <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
         <p className="text-gray-500 mb-6">{message || "Are you sure you want to delete this? This action cannot be undone."}</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-          <button onClick={onConfirm} className="flex-1 px-4 py-2 bg-rose-600 text-white font-medium rounded-xl hover:bg-rose-700 transition-all">Delete</button>
+          <button onClick={onClose} className="cursor-pointer flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 hover:shadow-inner active:scale-95 transition-all">Cancel</button>
+          <button onClick={onConfirm} className="cursor-pointer flex-1 px-4 py-2 bg-rose-600 text-white font-medium rounded-xl hover:bg-rose-700 hover:shadow-lg active:scale-95 transition-all">Delete</button>
         </div>
       </div>
     </div>

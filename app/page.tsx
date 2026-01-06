@@ -23,16 +23,10 @@ export default function LandingPage() {
           {/* Buttons */}
           <div className="flex items-center gap-4">
             <Link
-              href="/login"
-              className="hidden sm:block text-sm font-semibold text-gray-600 hover:text-[#41644A] transition-colors"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/register"
+              href="/dashboard"
               className="px-5 py-2.5 bg-[#41644A] text-white text-sm font-bold rounded-xl hover:bg-[#2e4a34] transition-all shadow-md hover:shadow-lg flex items-center gap-2"
             >
-              Get Started <ArrowRight size={16} />
+              Go to Dashboard <ArrowRight size={16} />
             </Link>
           </div>
         </div>
@@ -64,16 +58,10 @@ export default function LandingPage() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
             <Link
-              href="/register"
+              href="/dashboard"
               className="w-full sm:w-auto px-8 py-4 bg-[#41644A] text-white font-bold rounded-2xl hover:bg-[#2e4a34] hover:scale-105 transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-2"
             >
-              Start Tracking Free
-            </Link>
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-8 py-4 bg-white text-gray-700 border border-gray-200 font-bold rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
-            >
-               Sign In
+              Start Tracking Now
             </Link>
           </div>
 
@@ -85,19 +73,19 @@ export default function LandingPage() {
       {/* --- VISUAL MOCKUP --- */}
       <section className="px-4 pb-24">
         <div className="max-w-5xl mx-auto bg-gray-900 rounded-2xl p-2 sm:p-4 shadow-2xl ring-1 ring-gray-900/10">
-           <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 relative aspect-video flex items-center justify-center">
-              {/* Abstract Representation of Dashboard */}
-              <div className="absolute inset-0 bg-white flex flex-col items-center justify-center text-gray-300 space-y-4">
-                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                    <BarChart3 size={32} />
-                 </div>
-                 <p className="font-medium text-gray-400">Your Dashboard Preview</p>
+          <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 relative aspect-video flex items-center justify-center">
+            {/* Abstract Representation of Dashboard */}
+            <div className="absolute inset-0 bg-white flex flex-col items-center justify-center text-gray-300 space-y-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                <BarChart3 size={32} />
               </div>
+              <p className="font-medium text-gray-400">Your Dashboard Preview</p>
+            </div>
 
-              {/* Optional: You can replace the div above with an actual screenshot:
+            {/* Optional: You can replace the div above with an actual screenshot:
                   <img src="/dashboard-screenshot.png" className="w-full h-full object-cover" />
               */}
-           </div>
+          </div>
         </div>
       </section>
 
@@ -179,10 +167,10 @@ export default function LandingPage() {
             Join thousands of travelers who trust Trip Manager to handle their finances while they enjoy the view.
           </p>
           <Link
-            href="/register"
+            href="/dashboard"
             className="inline-flex items-center gap-2 px-8 py-4 bg-white text-[#41644A] font-bold rounded-2xl hover:bg-gray-100 hover:scale-105 transition-all shadow-xl"
           >
-            Create Your Free Account <ArrowRight size={18} />
+            Launch Dashboard <ArrowRight size={18} />
           </Link>
         </div>
       </section>
@@ -193,7 +181,7 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#41644A] rounded-lg flex items-center justify-center text-white">
-               <Map size={16} />
+              <Map size={16} />
             </div>
             <span className="text-lg font-bold text-gray-100">Trip Manager</span>
           </div>

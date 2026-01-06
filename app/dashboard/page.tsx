@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Download, Menu, Map, Calculator, ArrowUp, Calendar } from "lucide-react";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+
 
 // --- IMPORTANT: UPDATED IMPORTS (added ../) ---
 import { Trip } from '../type';
@@ -13,8 +13,6 @@ import { PeopleCard } from '../components/PeopleCard';
 import { ExpensesCard } from '../components/ExpensesCard';
 import { BalancesCard } from '../components/BalancesCard';
 import { SummaryGrid } from '../components/SummaryGrid';
-import { useAuth } from '../context/AuthContext';
-
 // ... (Rest of the Dashboard code remains exactly the same) ...
 
 const globalStyles = `
@@ -28,15 +26,7 @@ const globalStyles = `
 `;
 
 export default function Dashboard() {
-  // --- AUTH PROTECTION ---
-  const { isAuthenticated } = useAuth();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
 
   // --- APP STATE ---
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -136,9 +126,9 @@ export default function Dashboard() {
     const dateRange = activeTrip.startDate ? `(${activeTrip.startDate} to ${activeTrip.endDate || '...'})` : '';
     csvContent += `TRIP REPORT: ${activeTrip.name} ${dateRange} (${activeTrip.currency})\n\nSUMMARY\nTotal Deposits,${stats.totalDeposits}\nTotal Expenses,${stats.totalExpenses}\nRemaining Fund,${stats.remaining}\nCost Per Person,${Math.round(stats.avgCost)}\n\nPEOPLE & DEPOSITS\nName,Deposit,Status,Amount\n`;
     activeTrip.people.forEach(p => {
-        const balance = p.deposit - stats.avgCost;
-        const status = balance > 0 ? "Refund" : (balance < 0 ? "Owes" : "Settled");
-        csvContent += `${p.name},${p.deposit},${status},${Math.round(Math.abs(balance))}\n`;
+      const balance = p.deposit - stats.avgCost;
+      const status = balance > 0 ? "Refund" : (balance < 0 ? "Owes" : "Settled");
+      csvContent += `${p.name},${p.deposit},${status},${Math.round(Math.abs(balance))}\n`;
     });
     csvContent += `\nEXPENSES\nItem,Description,Cost\n`;
     activeTrip.expenses.forEach(e => { csvContent += `${e.item},${e.description},${e.amount}\n`; });
@@ -187,8 +177,8 @@ export default function Dashboard() {
     setItemToDelete(null);
   };
 
-  // If not authenticated, return null (prevents flashing content before redirect)
-  if (!isAuthenticated) return null;
+  // if (isPending) return null; 
+  // if (!session) return null;
   if (!isLoaded) return null;
 
   return (
@@ -200,9 +190,8 @@ export default function Dashboard() {
       {/* --- BACK TO TOP BUTTON --- */}
       <button
         onClick={handleScrollToTop}
-        className={`fixed bottom-8 right-8 bg-[#41644A] text-white p-3 rounded-full shadow-lg hover:bg-[#2e4a34] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${
-          showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-        }`}
+        className={`fixed bottom-8 right-8 bg-[#41644A] text-white p-3 rounded-full shadow-lg hover:bg-[#2e4a34] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+          }`}
       >
         <ArrowUp size={24} />
       </button>
@@ -217,7 +206,7 @@ export default function Dashboard() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      <main className="md:ml-64 flex-1 p-8">
+      <main className="md:ml-64 flex-1 p-4 md:p-8">
 
         {/* --- MASTER CONTAINER --- */}
         <div className="w-full max-w-[96%] mx-auto space-y-6">
@@ -249,12 +238,12 @@ export default function Dashboard() {
 
             <div className="flex gap-3">
               <Link href="/bulk_calculation">
-                <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"><Calculator size={16} /> Calculator</button>
+                <button className="cursor-pointer flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all"><Calculator size={16} /> Calculator</button>
               </Link>
-              {activeTrip && <button onClick={handleExport} className="flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"><Download size={16} /> Export</button>}
+              {activeTrip && <button onClick={handleExport} className="cursor-pointer flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all"><Download size={16} /> Export</button>}
               <button
                 onClick={() => handleAddClick('trip')}
-                className="flex items-center gap-2 px-6 py-2 bg-[#41644A] text-white rounded-lg text-sm font-medium hover:bg-[#2e4a34] transition shadow-sm"
+                className="cursor-pointer flex items-center gap-2 px-6 py-2 bg-[#41644A] text-white rounded-lg text-sm font-medium hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all shadow-sm"
               >
                 <Plus size={16} /> New Trip
               </button>
@@ -262,31 +251,31 @@ export default function Dashboard() {
           </header>
 
           {activeTrip ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <PeopleCard
-                people={activeTrip.people}
-                onAdd={() => handleAddClick('person')}
-                onEdit={(p) => handleEditItem('person', p)}
-                onDelete={(id) => handleDeleteItem('person', id)}
-              />
-              <ExpensesCard
-                expenses={activeTrip.expenses}
-                onAdd={() => handleAddClick('expense')}
-                onEdit={(e) => handleEditItem('expense', e)}
-                onDelete={(id) => handleDeleteItem('expense', id)}
-              />
-              <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <PeopleCard
+                  people={activeTrip.people}
+                  onAdd={() => handleAddClick('person')}
+                  onEdit={(p) => handleEditItem('person', p)}
+                  onDelete={(id) => handleDeleteItem('person', id)}
+                />
+                <ExpensesCard
+                  expenses={activeTrip.expenses}
+                  onAdd={() => handleAddClick('expense')}
+                  onEdit={(e) => handleEditItem('expense', e)}
+                  onDelete={(id) => handleDeleteItem('expense', id)}
+                />
+                <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
+              </div>
+              <div className="space-y-6">
+                <SummaryGrid stats={stats} />
+              </div>
             </div>
-            <div className="space-y-6">
-              <SummaryGrid stats={stats} />
-            </div>
-          </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-96 text-gray-400 text-center">
               <Map size={48} className="mb-4 opacity-20" />
               <p className="mb-4">No trips found. Create one to get started!</p>
-              <button onClick={() => handleAddClick('trip')} className="flex items-center gap-2 px-6 py-3 bg-[#41644A] text-white rounded-xl text-sm font-medium hover:bg-[#2e4a34] transition shadow-sm"><Plus size={18} /> Create First Trip</button>
+              <button onClick={() => handleAddClick('trip')} className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-[#41644A] text-white rounded-xl text-sm font-medium hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all shadow-sm"><Plus size={18} /> Create First Trip</button>
             </div>
           )}
 
