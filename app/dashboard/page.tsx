@@ -3,6 +3,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Download, Menu, Map, Calculator, ArrowUp, Calendar } from "lucide-react";
 import Link from 'next/link';
+import { authClient } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
 
 
 // --- IMPORTANT: UPDATED IMPORTS (added ../) ---
@@ -26,6 +28,8 @@ const globalStyles = `
 `;
 
 export default function Dashboard() {
+  const { data: session } = authClient.useSession();
+  const router = useRouter();
 
 
   // --- APP STATE ---
@@ -63,7 +67,7 @@ export default function Dashboard() {
 
   // --- UI STATES ---
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip'>('expense');
+  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip' | 'profile'>('expense');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip', id: number } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -112,7 +116,7 @@ export default function Dashboard() {
   };
 
   // --- HANDLERS ---
-  const handleAddClick = (type: 'person' | 'expense' | 'trip') => { setEditingItem(null); setModalType(type); setModalOpen(true); };
+  const handleAddClick = (type: 'person' | 'expense' | 'trip' | 'profile') => { setEditingItem(null); setModalType(type); setModalOpen(true); };
   const handleEditItem = (type: 'person' | 'expense' | 'trip', item: any) => { setEditingItem(item); setModalType(type); setModalOpen(true); };
   const handleDeleteItem = (type: 'person' | 'expense' | 'trip', id: number) => { setItemToDelete({ type, id }); };
 
@@ -141,7 +145,7 @@ export default function Dashboard() {
     document.body.removeChild(link);
   };
 
-  const saveData = (data: any) => {
+  const saveData = async (data: any) => {
     if (modalType === 'trip') {
       if (editingItem) {
         setTrips(trips.map(t => t.id === editingItem.id ? { ...t, name: data.name, startDate: data.startDate, endDate: data.endDate } : t));
@@ -149,6 +153,21 @@ export default function Dashboard() {
         const newTrip: Trip = { id: Date.now(), name: data.name, currency: "BDT", startDate: data.startDate, endDate: data.endDate, people: [], expenses: [] };
         setTrips([...trips, newTrip]);
         setActiveTripId(newTrip.id);
+      }
+    } else if (modalType === 'profile') {
+      // Handle Profile Update
+      // Note: better-auth client User Update depends on plugins.
+      // If 'username' plugin is used, we might need a specific call or custom API.
+      // For standard fields (name, image):
+      try {
+        await authClient.updateUser({
+          name: data.name,
+          image: data.image
+        });
+        // Force session refresh or optimistic update if needed
+        // window.location.reload(); // Simple way to refresh session data
+      } catch (error) {
+        console.error("Failed to update profile", error);
       }
     } else {
       setTrips(trips.map(t => {
@@ -204,6 +223,19 @@ export default function Dashboard() {
         onDeleteTrip={(trip: Trip) => handleDeleteItem('trip', trip.id)}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        user={session?.user}
+        onEditProfile={() => {
+          setEditingItem({ name: session?.user?.name, image: session?.user?.image });
+          setModalType('profile');
+          setModalOpen(true);
+        }}
+        onLogout={async () => {
+          await authClient.signOut({
+            fetchOptions: {
+              onSuccess: () => router.push("/sign-in")
+            }
+          });
+        }}
       />
 
       <main className="md:ml-64 flex-1 p-4 md:p-8">

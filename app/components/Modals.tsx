@@ -4,7 +4,7 @@ import { X, User, FileText, Calendar as CalendarIcon, ChevronDown } from 'lucide
 interface AddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'person' | 'expense' | 'trip';
+  type: 'person' | 'expense' | 'trip' | 'profile';
   onSave: (data: any) => void;
   initialData?: any;
 }
@@ -91,6 +91,9 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  // For Profile
+  const [imageUrl, setImageUrl] = useState('');
+
   useEffect(() => {
     if (initialData) {
       if (type === 'person') {
@@ -104,6 +107,9 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
         setName(initialData.name);
         setStartDate(initialData.startDate || '');
         setEndDate(initialData.endDate || '');
+      } else if (type === 'profile') {
+        setName(initialData.name || '');
+        setImageUrl(initialData.image || '');
       }
     } else {
       setName('');
@@ -113,6 +119,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
       setAmount('');
       setStartDate('');
       setEndDate('');
+      setImageUrl('');
     }
   }, [initialData, type, isOpen]);
 
@@ -124,6 +131,8 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
       onSave({ name, deposit: Number(deposit) });
     } else if (type === 'trip') {
       onSave({ name, startDate, endDate });
+    } else if (type === 'profile') {
+      onSave({ name, image: imageUrl });
     } else {
       onSave({ item, description, amount: Number(amount) });
     }
@@ -153,7 +162,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
         {/* Header */}
         <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center">
           <h3 className="text-xl font-bold text-gray-800">
-            {initialData ? 'Edit' : 'Add'} {type === 'person' ? 'Person' : type === 'expense' ? 'Expense' : 'Trip'}
+            {type === 'profile' ? 'Edit Profile' : initialData ? 'Edit' : 'Add'} {type === 'person' ? 'Person' : type === 'expense' ? 'Expense' : type === 'trip' ? 'Trip' : ''}
           </h3>
           <button onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 hover:bg-gray-100/50 p-2 rounded-lg transition-colors">
             <X size={24} />
@@ -226,6 +235,26 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
                   value={endDate}
                   onChange={setEndDate}
                 />
+              </div>
+            </>
+          )}
+
+          {/* --- PROFILE FORM --- */}
+          {type === 'profile' && (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Display Name</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                  <input required type="text" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} className={`${inputStyle} pl-11`} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Profile Image URL (Optional)</label>
+                <div className="relative">
+                  <FileText className="absolute left-4 top-3.5 text-gray-400" size={18} />
+                  <input type="text" placeholder="http://..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className={`${inputStyle} pl-11`} />
+                </div>
               </div>
             </>
           )}

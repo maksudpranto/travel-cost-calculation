@@ -11,24 +11,24 @@ interface SidebarProps {
   onDeleteTrip: (trip: Trip) => void;
   isOpen: boolean;
   onClose: () => void;
+  user?: {
+    name: string;
+    email: string;
+    image?: string | null;
+  } | null;
+  onEditProfile?: () => void;
+  onLogout?: () => void;
 }
 
-export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDeleteTrip, isOpen, onClose }: SidebarProps) => {
-
+export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDeleteTrip, isOpen, onClose, user, onEditProfile, onLogout }: SidebarProps) => {
 
   return (
     <>
-      {/* FIX 1: LOWERED Z-INDEX
-         Changed z-40 to z-30 so it sits below the sidebar (z-40) and modals (z-50)
-      */}
       <div
         className={`fixed inset-0 bg-black/20 z-30 md:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
-      {/* FIX 2: LOWERED Z-INDEX
-         Changed z-50 to z-40. Now it is BELOW the Modal (which is z-50)
-      */}
       <aside className={`
         fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-gray-100 z-40
         transform transition-transform duration-300 ease-in-out flex flex-col
@@ -89,25 +89,41 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
           )}
         </div>
 
-        {/* PROFILE FOOTER REMOVED or STATIC */}
+        {/* PROFILE FOOTER */}
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-100 shadow-sm relative group">
 
-            <div className="flex flex-1 items-center gap-3 min-w-0 cursor-pointer">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#41644A] to-[#2e4a34] flex items-center justify-center text-white shadow-md overflow-hidden shrink-0">
-                <UserIcon size={18} />
-              </div>
+            <div className="flex flex-1 items-center gap-3 min-w-0 cursor-pointer" onClick={onEditProfile}>
+              {user?.image ? (
+                <img src={user.image} alt={user.name} className="w-10 h-10 rounded-full object-cover shadow-sm" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#41644A] to-[#2e4a34] flex items-center justify-center text-white shadow-md overflow-hidden shrink-0">
+                  <UserIcon size={18} />
+                </div>
+              )}
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate group-hover:text-[#41644A] transition-colors">
-                  Guest User
+                  {user?.name || "Guest User"}
                 </p>
                 <p className="text-[10px] text-gray-500 truncate font-medium">
-                  Local Storage
+                  {user?.email || "Local Storage"}
                 </p>
               </div>
             </div>
 
+            {/* Logout Button (only if logged in) */}
+            {user && (
+              <button
+                onClick={onLogout}
+                title="Log Out"
+                className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+              >
+                <div className="rotate-180">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+                </div>
+              </button>
+            )}
           </div>
         </div>
 
