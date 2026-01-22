@@ -16,7 +16,7 @@ const scrollbarStyle = `
 
 export const BalancesCard = ({ people, avgCost }: BalancesCardProps) => {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 w-full">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 w-full">
       <style>{scrollbarStyle}</style>
       <h3 className="text-lg font-bold text-gray-800 mb-6">Settlement</h3>
 
@@ -33,7 +33,7 @@ export const BalancesCard = ({ people, avgCost }: BalancesCardProps) => {
               {/* LEFT: Serial + Avatar + Name */}
               <div className="flex items-center gap-3">
                 {/* 3. SERIAL NUMBER */}
-                <span className="text-gray-400 text-xs font-mono font-bold w-6 shrink-0">
+                <span className="hidden sm:block text-gray-400 text-xs font-mono font-bold w-6 shrink-0">
                   {(index + 1).toString().padStart(2, '0')}
                 </span>
 
@@ -45,7 +45,7 @@ export const BalancesCard = ({ people, avgCost }: BalancesCardProps) => {
 
               {/* RIGHT: Status & Amount */}
               {isSettled ? (
-                 <span className="text-gray-400 text-xs font-medium bg-gray-50 px-3 py-1 rounded-full border border-gray-100">All Settled</span>
+                <span className="text-gray-400 text-xs font-medium bg-gray-50 px-3 py-1 rounded-full border border-gray-100">All Settled</span>
               ) : (
                 <div className="text-right">
                   <p className={`text-[10px] font-bold uppercase tracking-wider ${isRefund ? 'text-emerald-600' : 'text-rose-500'}`}>{isRefund ? 'Gets back' : 'Owes'}</p>

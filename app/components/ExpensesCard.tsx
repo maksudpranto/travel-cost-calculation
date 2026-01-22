@@ -19,13 +19,13 @@ const scrollbarStyle = `
 
 export const ExpensesCard = ({ expenses, onAdd, onEdit, onDelete }: ExpensesCardProps) => {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 w-full">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 w-full">
       <style>{scrollbarStyle}</style>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-bold text-gray-800">Expenses</h3>
         <button
           onClick={onAdd}
-          className="cursor-pointer flex items-center gap-2 text-sm font-medium bg-[#41644A] text-white hover:bg-[#2e4a34] px-6 py-2 rounded-lg shadow-sm transition-all hover:shadow-lg active:scale-95"
+          className="cursor-pointer flex items-center gap-2 text-sm font-medium bg-[#FA5C5C] text-white hover:bg-[#D43E3E] px-6 py-2 rounded-lg shadow-sm transition-all hover:shadow-lg active:scale-95"
         >
           <Plus size={16} /> Add
         </button>
@@ -39,7 +39,7 @@ export const ExpensesCard = ({ expenses, onAdd, onEdit, onDelete }: ExpensesCard
             {/* LEFT: Serial + Icon + Text */}
             <div className="flex items-center gap-3 overflow-hidden">
               {/* 3. SERIAL NUMBER */}
-              <span className="text-gray-400 text-xs font-mono font-bold w-6 shrink-0">
+              <span className="hidden sm:block text-gray-400 text-xs font-mono font-bold w-6 shrink-0">
                 {(index + 1).toString().padStart(2, '0')}
               </span>
 
@@ -54,7 +54,7 @@ export const ExpensesCard = ({ expenses, onAdd, onEdit, onDelete }: ExpensesCard
 
             {/* RIGHT: Amount + Actions */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="font-bold tabular-nums text-sm text-gray-700 bg-gray-100/50 border border-gray-200/50 px-3 py-1.5 rounded-lg min-w-[80px] text-right backdrop-blur-sm">
+              <div className="font-bold tabular-nums text-sm text-gray-700 bg-gray-100/50 border border-gray-200/50 px-2 sm:px-3 py-1.5 rounded-lg min-w-[60px] sm:min-w-[80px] text-right backdrop-blur-sm">
                 ৳{expense.amount.toLocaleString()}
               </div>
               <div className="flex gap-1">

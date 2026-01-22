@@ -21,7 +21,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-[#41644A] selection:text-white">
+    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-[#FA5C5C] selection:text-white">
 
       {/* --- NAVBAR --- */}
       <nav
@@ -32,7 +32,7 @@ export default function LandingPage() {
 
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-colors ${scrolled ? 'bg-[#41644A] text-white' : 'bg-white/20 text-white backdrop-blur-sm'
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-colors ${scrolled ? 'bg-[#FA5C5C] text-white' : 'bg-white/20 text-white backdrop-blur-sm'
               }`}>
               <Map size={22} />
             </div>
@@ -47,10 +47,7 @@ export default function LandingPage() {
             {session ? (
               <Link
                 href="/dashboard"
-                className={`px-5 py-2.5 font-bold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 ${scrolled
-                  ? 'bg-[#41644A] text-white hover:bg-[#2e4a34]'
-                  : 'bg-white text-[#41644A] hover:bg-gray-100'
-                  }`}
+                className="px-5 py-2.5 font-bold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 bg-[#FA5C5C] text-white hover:bg-[#D43E3E]"
               >
                 Go to Dashboard <ArrowRight size={16} />
               </Link>
@@ -64,11 +61,8 @@ export default function LandingPage() {
                   Sign In
                 </Link>
                 <Link
-                  href="/sign-in"
-                  className={`px-5 py-2.5 font-bold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 ${scrolled
-                    ? 'bg-[#41644A] text-white hover:bg-[#2e4a34]'
-                    : 'bg-white text-[#41644A] hover:bg-gray-100'
-                    }`}
+                  href="/sign-in?mode=signup"
+                  className="px-5 py-2.5 font-bold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 bg-[#FA5C5C] text-white hover:bg-[#D43E3E]"
                 >
                   Get Started <ArrowRight size={16} />
                 </Link>
@@ -91,7 +85,7 @@ export default function LandingPage() {
             {session ? (
               <Link
                 href="/dashboard"
-                className="w-full px-5 py-3 bg-[#41644A] text-white font-bold rounded-xl text-center"
+                className="w-full px-5 py-3 bg-[#FA5C5C] text-white font-bold rounded-xl text-center"
               >
                 Go to Dashboard
               </Link>
@@ -104,8 +98,8 @@ export default function LandingPage() {
                   Sign In
                 </Link>
                 <Link
-                  href="/sign-in"
-                  className="w-full px-5 py-3 bg-[#41644A] text-white font-bold rounded-xl text-center"
+                  href="/sign-in?mode=signup"
+                  className="w-full px-5 py-3 bg-[#FA5C5C] text-white font-bold rounded-xl text-center"
                 >
                   Get Started
                 </Link>
@@ -120,7 +114,7 @@ export default function LandingPage() {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/hero-bg.png"
+            src="/new_hero_bg.png"
             alt="Scenic travel background"
             fill
             className="object-cover"
@@ -156,7 +150,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             <Link
               href={session ? "/dashboard" : "/sign-in"}
-              className="w-full sm:w-auto px-8 py-4 bg-[#41644A] text-white font-bold rounded-2xl hover:bg-[#34533a] hover:scale-105 transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 text-lg border-2 border-transparent"
+              className="w-full sm:w-auto px-8 py-4 bg-[#FA5C5C] text-white font-bold rounded-2xl hover:bg-[#D43E3E] hover:scale-105 transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 text-lg border-2 border-transparent"
             >
               {session ? "Go to Dashboard" : "Start Tracking Free"}
             </Link>
@@ -283,7 +277,7 @@ export default function LandingPage() {
       {/* --- PERFECT FOR... (Visual Cards) --- */}
       <section className="py-24 bg-gray-900 text-white relative isolate overflow-hidden">
         <Image
-          src="/hero-bg.png"
+          src="/new_hero_bg.png"
           alt="Background"
           fill
           className="object-cover opacity-10 blur-sm -z-10"
@@ -296,7 +290,7 @@ export default function LandingPage() {
               <p className="text-gray-400 text-lg">Whether you're backpacking solo or vacationing with the whole family.</p>
             </div>
             <Link
-              href="/sign-in"
+              href="/sign-in?mode=signup"
               className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-bold transition-all flex items-center gap-2"
             >
               Start Your Journey <ArrowRight size={18} />
@@ -308,7 +302,7 @@ export default function LandingPage() {
               { title: "Couples", icon: "❤️", desc: "Keep track of shared costs properly." },
               { title: "Roommates", icon: "🏠", desc: "Split rent, utilities, and groceries." },
               { title: "Road Trips", icon: "🚗", desc: "Gas, snacks, and motels sorted." },
-              { title: "Friends", icon: "✈️", desc: "International group holidays made easy." },
+              { title: "Friends", icon: "🧑‍🤝‍🧑", desc: "International group holidays made easy." },
             ].map((card, i) => (
               <div key={i} className="bg-gray-800/50 backdrop-blur-md border border-white/10 p-6 rounded-2xl hover:bg-gray-800/80 transition-colors">
                 <div className="text-4xl mb-4">{card.icon}</div>
@@ -325,7 +319,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
 
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#41644A] rounded-lg flex items-center justify-center text-white">
+            <div className="w-8 h-8 bg-[#FA5C5C] rounded-lg flex items-center justify-center text-white">
               <Map size={16} />
             </div>
             <span className="text-lg font-bold text-gray-100">Trip Manager</span>

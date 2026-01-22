@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Map, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
+import Image from "next/image";
+import { Map, Loader2, ArrowLeft } from "lucide-react";
 
-export default function SignInPage() {
+function SignInContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
     const [isSignUp, setIsSignUp] = useState(false);
     const [identifier, setIdentifier] = useState(""); // Email or Phone
     const [password, setPassword] = useState("");
@@ -15,7 +19,12 @@ export default function SignInPage() {
     const [error, setError] = useState("");
     const [usePhone, setUsePhone] = useState(false); // Only for explicit Sign Up toggle
 
-    const router = useRouter();
+    useEffect(() => {
+        const mode = searchParams.get("mode");
+        if (mode === "signup") {
+            setIsSignUp(true);
+        }
+    }, [searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,6 +53,7 @@ export default function SignInPage() {
                         email: identifier,
                         password,
                         name,
+                        username: identifier.split('@')[0], // Optional username generation
                     }, {
                         onSuccess: () => router.push("/dashboard"),
                         onError: (ctx: any) => {
@@ -88,146 +98,174 @@ export default function SignInPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center sm:px-6 lg:px-8 font-sans selection:bg-[#41644A] selection:text-white relative">
-            {/* Back Button */}
-            <div className="absolute top-6 left-6">
-                <Link
-                    href="/"
-                    className="group flex items-center justify-center text-gray-500 hover:text-[#41644A] transition-colors cursor-pointer"
-                >
-                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm group-hover:border-[#41644A] group-hover:shadow-md transition-all">
-                        <ArrowLeft size={24} />
-                    </div>
-                </Link>
+        <div className="min-h-screen flex font-sans selection:bg-[#FA5C5C] selection:text-white relative overflow-hidden">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+                <Image
+                    src="/new_hero_bg.png"
+                    alt="Background"
+                    fill
+                    className="object-cover"
+                    quality={100}
+                    priority
+                />
+                <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
             </div>
 
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <Link href="/" className="flex justify-center items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-[#41644A] rounded-xl flex items-center justify-center text-white shadow-sm">
-                        <Map size={22} />
-                    </div>
-                    <span className="text-xl font-bold tracking-tight text-gray-900">Trip Manager</span>
-                </Link>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    {isSignUp ? "Create your account" : "Sign in to your account"}
-                </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
-                    Or{" "}
-                    <button
-                        onClick={() => {
-                            setIsSignUp(!isSignUp);
-                            setError("");
-                            setUsePhone(false);
-                        }}
-                        className="font-medium text-[#41644A] hover:text-[#2e4a34] transition-colors cursor-pointer"
+            {/* Content Container */}
+            <div className="relative z-10 w-full flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8">
+
+                {/* Back Button */}
+                <div className="absolute top-6 left-6">
+                    <Link
+                        href="/"
+                        className="group flex items-center justify-center text-white/80 hover:text-white transition-colors cursor-pointer"
                     >
-                        {isSignUp ? "sign in to existing account" : "create a new account"}
-                    </button>
-                </p>
-            </div>
-
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
-
-                    {/* Sign Up Mode Toggle */}
-                    {isSignUp && (
-                        <div className="flex rounded-md shadow-sm mb-6" role="group">
-                            <button
-                                type="button"
-                                onClick={() => { setUsePhone(false); setIdentifier(""); }}
-                                className={`px-4 py-2 text-sm font-medium border flex-1 rounded-l-lg cursor-pointer ${!usePhone ? 'bg-[#41644A] text-white border-[#41644A]' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                            >
-                                Email
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => { setUsePhone(true); setIdentifier(""); }}
-                                className={`px-4 py-2 text-sm font-medium border-t border-b border-r flex-1 rounded-r-lg cursor-pointer ${usePhone ? 'bg-[#41644A] text-white border-[#41644A]' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                            >
-                                Phone
-                            </button>
+                        <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg group-hover:bg-white/20 group-hover:scale-105 transition-all duration-300">
+                            <ArrowLeft size={24} />
                         </div>
-                    )}
+                    </Link>
+                </div>
 
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        {isSignUp && (
-                            <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                                    Full Name
-                                </label>
-                                <div className="mt-1">
+                <div className="w-full max-w-md">
+                    {/* Glassmorphism Card */}
+                    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/40">
+                        <div className="px-8 py-10">
+                            {/* Header */}
+                            <div className="text-center mb-8">
+                                <Link href="/" className="inline-flex justify-center items-center gap-3 mb-6 group">
+                                    <div className="w-12 h-12 bg-[#FA5C5C] rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                        <Map size={24} />
+                                    </div>
+                                    <span className="text-2xl font-bold tracking-tight text-gray-900">Trip Manager</span>
+                                </Link>
+                                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                                    {isSignUp ? "Create Account" : "Welcome Back"}
+                                </h2>
+                                <p className="mt-3 text-base text-gray-600">
+                                    {isSignUp ? "Join us to plan your next adventure" : "Sign in to access your trips"}
+                                </p>
+                            </div>
+
+                            {/* Sign Up Mode Toggle */}
+                            {isSignUp && (
+                                <div className="flex bg-gray-100/50 p-1 rounded-xl mb-8 relative" role="group">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setUsePhone(false); setIdentifier(""); }}
+                                        className={`flex-1 flex items-center justify-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 cursor-pointer ${!usePhone ? 'bg-[#FA5C5C] text-white shadow-md' : 'text-gray-500 hover:text-gray-900'}`}
+                                    >
+                                        Use Email
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setUsePhone(true); setIdentifier(""); }}
+                                        className={`flex-1 flex items-center justify-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 cursor-pointer ${usePhone ? 'bg-[#FA5C5C] text-white shadow-md' : 'text-gray-500 hover:text-gray-900'}`}
+                                    >
+                                        Use Phone
+                                    </button>
+                                </div>
+                            )}
+
+                            <form className="space-y-6" onSubmit={handleSubmit}>
+                                {isSignUp && (
+                                    <div className="space-y-2">
+                                        <label htmlFor="name" className="block text-sm font-semibold text-gray-700 ml-1">
+                                            Full Name
+                                        </label>
+                                        <input
+                                            id="name"
+                                            name="name"
+                                            type="text"
+                                            required={isSignUp}
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            placeholder="John Doe"
+                                            className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FA5C5C]/20 focus:border-[#FA5C5C] transition-all duration-200 sm:text-sm shadow-sm"
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    <label htmlFor="identifier" className="block text-sm font-semibold text-gray-700 ml-1">
+                                        {isSignUp ? (usePhone ? "Phone Number" : "Email Address") : "Email or Phone Number"}
+                                    </label>
                                     <input
-                                        id="name"
-                                        name="name"
-                                        type="text"
-                                        required={isSignUp}
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#41644A] focus:border-[#41644A] sm:text-sm"
+                                        id="identifier"
+                                        name="identifier"
+                                        type={isSignUp ? (usePhone ? "tel" : "email") : "text"}
+                                        autoComplete={isSignUp ? (usePhone ? "tel" : "email") : "username"}
+                                        required
+                                        value={identifier}
+                                        onChange={(e) => setIdentifier(e.target.value)}
+                                        placeholder={isSignUp ? (usePhone ? "+1 (555) 000-0000" : "you@example.com") : "Enter your email or phone"}
+                                        className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FA5C5C]/20 focus:border-[#FA5C5C] transition-all duration-200 sm:text-sm shadow-sm"
                                     />
                                 </div>
-                            </div>
-                        )}
 
-                        <div>
-                            <label htmlFor="identifier" className="block text-sm font-medium text-gray-700">
-                                {isSignUp ? (usePhone ? "Phone Number" : "Email address") : "Email or Phone Number"}
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="identifier"
-                                    name="identifier"
-                                    type={isSignUp ? (usePhone ? "tel" : "email") : "text"}
-                                    autoComplete={isSignUp ? (usePhone ? "tel" : "email") : "username"}
-                                    required
-                                    value={identifier}
-                                    onChange={(e) => setIdentifier(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#41644A] focus:border-[#41644A] sm:text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Password
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autoComplete={isSignUp ? "new-password" : "current-password"}
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#41644A] focus:border-[#41644A] sm:text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        {error && (
-                            <div className="rounded-md bg-red-50 p-4">
-                                <div className="flex">
-                                    <div className="text-sm text-red-700">
-                                        {error}
-                                    </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 ml-1">
+                                        Password
+                                    </label>
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        autoComplete={isSignUp ? "new-password" : "current-password"}
+                                        required
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FA5C5C]/20 focus:border-[#FA5C5C] transition-all duration-200 sm:text-sm shadow-sm"
+                                    />
                                 </div>
-                            </div>
-                        )}
 
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#41644A] hover:bg-[#2e4a34] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#41644A] disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
-                            >
-                                {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isSignUp ? "Sign up" : "Sign in")}
-                            </button>
+                                {error && (
+                                    <div className="rounded-xl bg-red-50 p-4 border border-red-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className="flex">
+                                            <div className="text-sm text-red-700 font-medium">
+                                                {error}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-[#FA5C5C]/20 text-sm font-bold text-white bg-[#FA5C5C] hover:bg-[#D43E3E] hover:shadow-xl hover:shadow-[#FA5C5C]/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FA5C5C] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer transform hover:-translate-y-0.5"
+                                >
+                                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isSignUp ? "Create Acount" : "Sign In")}
+                                </button>
+                            </form>
                         </div>
-                    </form>
 
+                        <div className="px-8 py-6 bg-gray-50/80 border-t border-gray-100 flex items-center justify-center">
+                            <p className="text-sm text-gray-600">
+                                {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+                                <button
+                                    onClick={() => {
+                                        setIsSignUp(!isSignUp);
+                                        setError("");
+                                        setUsePhone(false);
+                                    }}
+                                    className="font-bold text-[#FA5C5C] hover:text-[#D43E3E] transition-colors cursor-pointer ml-1"
+                                >
+                                    {isSignUp ? "Sign In" : "Sign Up"}
+                                </button>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SignInPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-[#FA5C5C]" /></div>}>
+            <SignInContent />
+        </Suspense>
     );
 }

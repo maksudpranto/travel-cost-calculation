@@ -59,10 +59,10 @@ const ModernDatePicker = ({ label, value, onChange }: { label: string, value: st
           flex items-center justify-between w-full px-4 py-3
           bg-gray-50 border rounded-xl transition-all duration-200
           ${isSelected ? 'border-gray-300 text-gray-900 bg-white' : 'border-gray-200 text-gray-400'}
-          group-hover:border-[#41644A] group-hover:bg-white group-hover:shadow-sm
+          group-hover:border-[#FA5C5C] group-hover:bg-white group-hover:shadow-sm
         `}>
           <div className="flex items-center gap-3">
-            <CalendarIcon size={18} className={isSelected ? 'text-[#41644A]' : 'text-gray-400'} />
+            <CalendarIcon size={18} className={isSelected ? 'text-[#FA5C5C]' : 'text-gray-400'} />
             <span className="text-sm font-medium">{displayDate}</span>
           </div>
           <ChevronDown size={16} className="text-gray-400 opacity-50" />
@@ -139,7 +139,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
     onClose();
   };
 
-  const inputStyle = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#41644A] transition-colors";
+  const inputStyle = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#FA5C5C] transition-colors";
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -256,7 +256,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
             <button type="button" onClick={onClose} className="cursor-pointer flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 hover:shadow-inner active:scale-95 transition-all">Cancel</button>
             <button
               type="submit"
-              className="cursor-pointer flex-1 px-4 py-3 bg-[#41644A] text-white font-bold rounded-xl hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all"
+              className="cursor-pointer flex-1 px-4 py-3 bg-[#FA5C5C] text-white font-bold rounded-xl hover:bg-[#D43E3E] hover:shadow-lg active:scale-95 transition-all"
             >
               {initialData ? 'Update' : 'Save'}
             </button>

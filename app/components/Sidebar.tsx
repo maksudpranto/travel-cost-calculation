@@ -37,7 +37,7 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
 
         <div className="p-6 flex items-center justify-between border-b border-gray-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#41644A] rounded-xl flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 bg-[#FA5C5C] rounded-xl flex items-center justify-center shadow-sm">
               <Map className="text-white" size={20} />
             </div>
             <h1 className="text-xl font-bold text-gray-800 tracking-tight">Trip Manager</h1>
@@ -62,7 +62,7 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
                 className={`
                   group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200
                   ${activeTripId === trip.id
-                    ? 'bg-[#41644A]/10 text-[#41644A] font-bold'
+                    ? 'bg-[#FA5C5C]/10 text-[#FA5C5C] font-bold'
                     : 'text-gray-600 hover:bg-gray-50'}
                 `}
               >
@@ -97,13 +97,13 @@ export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDelet
               {user?.image ? (
                 <img src={user.image} alt={user.name} className="w-10 h-10 rounded-full object-cover shadow-sm" />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#41644A] to-[#2e4a34] flex items-center justify-center text-white shadow-md overflow-hidden shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FA5C5C] to-[#D43E3E] flex items-center justify-center text-white shadow-md overflow-hidden shrink-0">
                   <UserIcon size={18} />
                 </div>
               )}
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 truncate group-hover:text-[#41644A] transition-colors">
+                <p className="text-sm font-bold text-gray-900 truncate group-hover:text-[#FA5C5C] transition-colors">
                   {user?.name || "Guest User"}
                 </p>
                 <p className="text-[10px] text-gray-500 truncate font-medium">

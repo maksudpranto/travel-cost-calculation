@@ -282,7 +282,7 @@ export default function Dashboard() {
       {/* --- BACK TO TOP BUTTON --- */}
       <button
         onClick={handleScrollToTop}
-        className={`fixed bottom-8 right-8 bg-[#41644A] text-white p-3 rounded-full shadow-lg hover:bg-[#2e4a34] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+        className={`fixed bottom-8 right-8 bg-[#FA5C5C] text-white p-3 rounded-full shadow-lg hover:bg-[#D43E3E] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
           }`}
       >
         <ArrowUp size={24} />
@@ -316,11 +316,10 @@ export default function Dashboard() {
         {/* --- MASTER CONTAINER --- */}
         <div className="w-full max-w-[96%] mx-auto space-y-6">
 
-          <header className="bg-white rounded-xl border border-gray-100 p-4 flex justify-between items-center shadow-sm w-full">
+          <header className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-sm w-full">
             <div className="flex items-center gap-3">
               <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"><Menu size={24} /></button>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 w-full sm:w-auto">
                 <h2 className="text-xl font-bold text-gray-900">
                   {activeTrip ? activeTrip.name : "Welcome"}
                 </h2>
@@ -341,16 +340,25 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <Link href="/bulk_calculation">
-                <button className="cursor-pointer flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all"><Calculator size={16} /> Calculator</button>
+            <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-0 w-full sm:w-auto">
+              <Link href="/bulk_calculation" className="flex-1 sm:flex-none">
+                <button className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all">
+                  <Calculator size={16} />
+                  <span className="hidden sm:inline">Calculator</span>
+                </button>
               </Link>
-              {activeTrip && <button onClick={handleExport} className="cursor-pointer flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all"><Download size={16} /> Export</button>}
+              {activeTrip && (
+                <button onClick={handleExport} className="cursor-pointer flex-1 sm:flex-none w-full sm:w-auto flex items-center justify-center gap-2 px-3 sm:px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all">
+                  <Download size={16} />
+                  <span className="hidden sm:inline">Export</span>
+                </button>
+              )}
               <button
                 onClick={() => handleAddClick('trip')}
-                className="cursor-pointer flex items-center gap-2 px-6 py-2 bg-[#41644A] text-white rounded-lg text-sm font-medium hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all shadow-sm"
+                className="cursor-pointer flex-1 sm:flex-none w-full sm:w-auto flex items-center justify-center gap-2 px-3 sm:px-6 py-2 bg-[#FA5C5C] text-white rounded-lg text-sm font-medium hover:bg-[#D43E3E] hover:shadow-lg active:scale-95 transition-all shadow-sm"
               >
-                <Plus size={16} /> New Trip
+                <Plus size={16} />
+                <span className="sm:inline">New Trip</span>
               </button>
             </div>
           </header>
@@ -380,7 +388,7 @@ export default function Dashboard() {
             <div className="flex flex-col items-center justify-center h-96 text-gray-400 text-center">
               <Map size={48} className="mb-4 opacity-20" />
               <p className="mb-4">No trips found. Create one to get started!</p>
-              <button onClick={() => handleAddClick('trip')} className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-[#41644A] text-white rounded-xl text-sm font-medium hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all shadow-sm"><Plus size={18} /> Create First Trip</button>
+              <button onClick={() => handleAddClick('trip')} className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-[#FA5C5C] text-white rounded-xl text-sm font-medium hover:bg-[#D43E3E] hover:shadow-lg active:scale-95 transition-all shadow-sm"><Plus size={18} /> Create First Trip</button>
             </div>
           )}
 
