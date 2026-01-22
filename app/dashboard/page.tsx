@@ -37,24 +37,39 @@ export default function Dashboard() {
   const [activeTripId, setActiveTripId] = useState<number>(0);
   const activeTrip = trips.find(t => t.id === activeTripId) || trips[0];
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // --- SCROLL TO TOP STATE ---
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // --- PERSISTENCE ---
-  useEffect(() => {
-    const saved = localStorage.getItem('travel_split_data');
-    if (saved) setTrips(JSON.parse(saved));
-    setIsLoaded(true);
-  }, []);
+  // --- PERSISTENCE (API) ---
+  const fetchTrips = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/trips");
+      if (res.ok) {
+        const data = await res.json();
+        setTrips(data);
+        setIsLoaded(true);
+        if (data.length > 0 && activeTripId === 0) {
+          setActiveTripId(data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch trips", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (isLoaded) localStorage.setItem('travel_split_data', JSON.stringify(trips));
-  }, [trips, isLoaded]);
+    if (session?.user) {
+      fetchTrips();
+    } else {
+      setIsLoading(false);
+    }
+  }, [session]);
 
-  useEffect(() => {
-    if (isLoaded && trips.length > 0 && activeTripId === 0) setActiveTripId(trips[0].id);
-  }, [isLoaded, trips, activeTripId]);
 
   // --- SCROLL LISTENER ---
   useEffect(() => {
@@ -148,57 +163,115 @@ export default function Dashboard() {
   const saveData = async (data: any) => {
     if (modalType === 'trip') {
       if (editingItem) {
-        setTrips(trips.map(t => t.id === editingItem.id ? { ...t, name: data.name, startDate: data.startDate, endDate: data.endDate } : t));
+        // Update Trip Logic
+        const updatedTrip = { ...activeTrip, name: data.name, startDate: data.startDate, endDate: data.endDate };
+        // Optimistic Update
+        const updatedTrips = trips.map(t => t.id === editingItem.id ? updatedTrip : t);
+        setTrips(updatedTrips);
+
+        // API Update
+        await fetch(`/api/trips/${editingItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTrip)
+        });
       } else {
-        const newTrip: Trip = { id: Date.now(), name: data.name, currency: "BDT", startDate: data.startDate, endDate: data.endDate, people: [], expenses: [] };
-        setTrips([...trips, newTrip]);
-        setActiveTripId(newTrip.id);
+        // Create Trip Logic
+        const newTripData = { id: Date.now(), name: data.name, currency: "BDT", startDate: data.startDate, endDate: data.endDate, people: [], expenses: [] };
+
+        // Optimistic
+        setTrips([...trips, newTripData]);
+        setActiveTripId(newTripData.id);
+
+        // API Call
+        const res = await fetch("/api/trips", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTripData)
+        });
+        if (res.ok) {
+          const serverTrip = await res.json();
+          // Note: If server assigns a different ID (e.g. valid ObjectId instead of date), we should update it.
+          // But here we rely on Date.now() ID passing through.
+        }
       }
     } else if (modalType === 'profile') {
       // Handle Profile Update
-      // Note: better-auth client User Update depends on plugins.
-      // If 'username' plugin is used, we might need a specific call or custom API.
-      // For standard fields (name, image):
       try {
         await authClient.updateUser({
           name: data.name,
           image: data.image
         });
-        // Force session refresh or optimistic update if needed
-        // window.location.reload(); // Simple way to refresh session data
       } catch (error) {
         console.error("Failed to update profile", error);
       }
     } else {
-      setTrips(trips.map(t => {
-        if (t.id !== activeTripId) return t;
-        if (modalType === 'person') {
-          return editingItem ? { ...t, people: t.people.map(p => p.id === editingItem.id ? { ...p, ...data } : p) } : { ...t, people: [...t.people, { id: Date.now(), ...data }] };
+      // Handle People or Expenses
+      if (!activeTrip) return;
+
+      let updatedTrip = { ...activeTrip };
+
+      if (modalType === 'person') {
+        if (editingItem) {
+          updatedTrip.people = updatedTrip.people.map(p => p.id === editingItem.id ? { ...p, ...data } : p);
         } else {
-          return editingItem ? { ...t, expenses: t.expenses.map(e => e.id === editingItem.id ? { ...e, ...data } : e) } : { ...t, expenses: [...t.expenses, { id: Date.now(), ...data }] };
+          updatedTrip.people = [...updatedTrip.people, { id: Date.now(), ...data }];
         }
-      }));
+      } else {
+        if (editingItem) {
+          updatedTrip.expenses = updatedTrip.expenses.map(e => e.id === editingItem.id ? { ...e, ...data } : e);
+        } else {
+          updatedTrip.expenses = [...updatedTrip.expenses, { id: Date.now(), ...data }];
+        }
+      }
+
+      // Optimistic Update
+      setTrips(trips.map(t => t.id === activeTripId ? updatedTrip : t));
+
+      // API Update
+      await fetch(`/api/trips/${activeTrip.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTrip)
+      });
     }
     setEditingItem(null);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!itemToDelete) return;
+
     if (itemToDelete.type === 'trip') {
-      const newTrips = trips.filter(t => t.id !== itemToDelete.id); setTrips(newTrips);
+      // Optimistic
+      const newTrips = trips.filter(t => t.id !== itemToDelete.id);
+      setTrips(newTrips);
       if (activeTripId === itemToDelete.id) setActiveTripId(newTrips[0]?.id || 0);
+
+      // API
+      await fetch(`/api/trips/${itemToDelete.id}`, { method: 'DELETE' });
     } else {
-      setTrips(trips.map(t => {
-        if (t.id !== activeTripId) return t;
-        return itemToDelete.type === 'person' ? { ...t, people: t.people.filter(p => p.id !== itemToDelete.id) } : { ...t, expenses: t.expenses.filter(e => e.id !== itemToDelete.id) };
-      }));
+      let updatedTrip = { ...activeTrip } as Trip;
+      if (itemToDelete.type === 'person') {
+        updatedTrip.people = updatedTrip.people.filter(p => p.id !== itemToDelete.id);
+      } else {
+        updatedTrip.expenses = updatedTrip.expenses.filter(e => e.id !== itemToDelete.id);
+      }
+
+      setTrips(trips.map(t => t.id === activeTripId ? updatedTrip : t));
+
+      // API Update
+      await fetch(`/api/trips/${activeTrip?.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTrip)
+      });
     }
     setItemToDelete(null);
   };
 
   // if (isPending) return null; 
   // if (!session) return null;
-  if (!isLoaded) return null;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
 
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900">
@@ -232,7 +305,7 @@ export default function Dashboard() {
         onLogout={async () => {
           await authClient.signOut({
             fetchOptions: {
-              onSuccess: () => router.push("/sign-in")
+              onSuccess: () => router.push("/")
             }
           });
         }}

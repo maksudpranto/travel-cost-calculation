@@ -249,13 +249,6 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
                   <input required type="text" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} className={`${inputStyle} pl-11`} />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Profile Image URL (Optional)</label>
-                <div className="relative">
-                  <FileText className="absolute left-4 top-3.5 text-gray-400" size={18} />
-                  <input type="text" placeholder="http://..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className={`${inputStyle} pl-11`} />
-                </div>
-              </div>
             </>
           )}
 
