@@ -3,7 +3,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Download, Menu, Map, Calculator, ArrowUp, Calendar } from "lucide-react";
 import Link from 'next/link';
+import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
+
 
 // --- IMPORTANT: UPDATED IMPORTS (added ../) ---
 import { Trip } from '../type';
@@ -13,8 +15,6 @@ import { PeopleCard } from '../components/PeopleCard';
 import { ExpensesCard } from '../components/ExpensesCard';
 import { BalancesCard } from '../components/BalancesCard';
 import { SummaryGrid } from '../components/SummaryGrid';
-import { useAuth } from '../context/AuthContext';
-
 // ... (Rest of the Dashboard code remains exactly the same) ...
 
 const globalStyles = `
@@ -28,39 +28,48 @@ const globalStyles = `
 `;
 
 export default function Dashboard() {
-  // --- AUTH PROTECTION ---
-  const { isAuthenticated } = useAuth();
+  const { data: session } = authClient.useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
 
   // --- APP STATE ---
   const [trips, setTrips] = useState<Trip[]>([]);
   const [activeTripId, setActiveTripId] = useState<number>(0);
   const activeTrip = trips.find(t => t.id === activeTripId) || trips[0];
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // --- SCROLL TO TOP STATE ---
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // --- PERSISTENCE ---
-  useEffect(() => {
-    const saved = localStorage.getItem('travel_split_data');
-    if (saved) setTrips(JSON.parse(saved));
-    setIsLoaded(true);
-  }, []);
+  // --- PERSISTENCE (API) ---
+  const fetchTrips = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/trips");
+      if (res.ok) {
+        const data = await res.json();
+        setTrips(data);
+        setIsLoaded(true);
+        if (data.length > 0 && activeTripId === 0) {
+          setActiveTripId(data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch trips", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (isLoaded) localStorage.setItem('travel_split_data', JSON.stringify(trips));
-  }, [trips, isLoaded]);
+    if (session?.user) {
+      fetchTrips();
+    } else {
+      setIsLoading(false);
+    }
+  }, [session]);
 
-  useEffect(() => {
-    if (isLoaded && trips.length > 0 && activeTripId === 0) setActiveTripId(trips[0].id);
-  }, [isLoaded, trips, activeTripId]);
 
   // --- SCROLL LISTENER ---
   useEffect(() => {
@@ -73,7 +82,7 @@ export default function Dashboard() {
 
   // --- UI STATES ---
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip'>('expense');
+  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip' | 'profile'>('expense');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip', id: number } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -122,7 +131,7 @@ export default function Dashboard() {
   };
 
   // --- HANDLERS ---
-  const handleAddClick = (type: 'person' | 'expense' | 'trip') => { setEditingItem(null); setModalType(type); setModalOpen(true); };
+  const handleAddClick = (type: 'person' | 'expense' | 'trip' | 'profile') => { setEditingItem(null); setModalType(type); setModalOpen(true); };
   const handleEditItem = (type: 'person' | 'expense' | 'trip', item: any) => { setEditingItem(item); setModalType(type); setModalOpen(true); };
   const handleDeleteItem = (type: 'person' | 'expense' | 'trip', id: number) => { setItemToDelete({ type, id }); };
 
@@ -136,9 +145,9 @@ export default function Dashboard() {
     const dateRange = activeTrip.startDate ? `(${activeTrip.startDate} to ${activeTrip.endDate || '...'})` : '';
     csvContent += `TRIP REPORT: ${activeTrip.name} ${dateRange} (${activeTrip.currency})\n\nSUMMARY\nTotal Deposits,${stats.totalDeposits}\nTotal Expenses,${stats.totalExpenses}\nRemaining Fund,${stats.remaining}\nCost Per Person,${Math.round(stats.avgCost)}\n\nPEOPLE & DEPOSITS\nName,Deposit,Status,Amount\n`;
     activeTrip.people.forEach(p => {
-        const balance = p.deposit - stats.avgCost;
-        const status = balance > 0 ? "Refund" : (balance < 0 ? "Owes" : "Settled");
-        csvContent += `${p.name},${p.deposit},${status},${Math.round(Math.abs(balance))}\n`;
+      const balance = p.deposit - stats.avgCost;
+      const status = balance > 0 ? "Refund" : (balance < 0 ? "Owes" : "Settled");
+      csvContent += `${p.name},${p.deposit},${status},${Math.round(Math.abs(balance))}\n`;
     });
     csvContent += `\nEXPENSES\nItem,Description,Cost\n`;
     activeTrip.expenses.forEach(e => { csvContent += `${e.item},${e.description},${e.amount}\n`; });
@@ -151,45 +160,118 @@ export default function Dashboard() {
     document.body.removeChild(link);
   };
 
-  const saveData = (data: any) => {
+  const saveData = async (data: any) => {
     if (modalType === 'trip') {
       if (editingItem) {
-        setTrips(trips.map(t => t.id === editingItem.id ? { ...t, name: data.name, startDate: data.startDate, endDate: data.endDate } : t));
+        // Update Trip Logic
+        const updatedTrip = { ...activeTrip, name: data.name, startDate: data.startDate, endDate: data.endDate };
+        // Optimistic Update
+        const updatedTrips = trips.map(t => t.id === editingItem.id ? updatedTrip : t);
+        setTrips(updatedTrips);
+
+        // API Update
+        await fetch(`/api/trips/${editingItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTrip)
+        });
       } else {
-        const newTrip: Trip = { id: Date.now(), name: data.name, currency: "BDT", startDate: data.startDate, endDate: data.endDate, people: [], expenses: [] };
-        setTrips([...trips, newTrip]);
-        setActiveTripId(newTrip.id);
+        // Create Trip Logic
+        const newTripData = { id: Date.now(), name: data.name, currency: "BDT", startDate: data.startDate, endDate: data.endDate, people: [], expenses: [] };
+
+        // Optimistic
+        setTrips([...trips, newTripData]);
+        setActiveTripId(newTripData.id);
+
+        // API Call
+        const res = await fetch("/api/trips", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTripData)
+        });
+        if (res.ok) {
+          const serverTrip = await res.json();
+          // Note: If server assigns a different ID (e.g. valid ObjectId instead of date), we should update it.
+          // But here we rely on Date.now() ID passing through.
+        }
+      }
+    } else if (modalType === 'profile') {
+      // Handle Profile Update
+      try {
+        await authClient.updateUser({
+          name: data.name,
+          image: data.image
+        });
+      } catch (error) {
+        console.error("Failed to update profile", error);
       }
     } else {
-      setTrips(trips.map(t => {
-        if (t.id !== activeTripId) return t;
-        if (modalType === 'person') {
-          return editingItem ? { ...t, people: t.people.map(p => p.id === editingItem.id ? { ...p, ...data } : p) } : { ...t, people: [...t.people, { id: Date.now(), ...data }] };
+      // Handle People or Expenses
+      if (!activeTrip) return;
+
+      let updatedTrip = { ...activeTrip };
+
+      if (modalType === 'person') {
+        if (editingItem) {
+          updatedTrip.people = updatedTrip.people.map(p => p.id === editingItem.id ? { ...p, ...data } : p);
         } else {
-          return editingItem ? { ...t, expenses: t.expenses.map(e => e.id === editingItem.id ? { ...e, ...data } : e) } : { ...t, expenses: [...t.expenses, { id: Date.now(), ...data }] };
+          updatedTrip.people = [...updatedTrip.people, { id: Date.now(), ...data }];
         }
-      }));
+      } else {
+        if (editingItem) {
+          updatedTrip.expenses = updatedTrip.expenses.map(e => e.id === editingItem.id ? { ...e, ...data } : e);
+        } else {
+          updatedTrip.expenses = [...updatedTrip.expenses, { id: Date.now(), ...data }];
+        }
+      }
+
+      // Optimistic Update
+      setTrips(trips.map(t => t.id === activeTripId ? updatedTrip : t));
+
+      // API Update
+      await fetch(`/api/trips/${activeTrip.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTrip)
+      });
     }
     setEditingItem(null);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!itemToDelete) return;
+
     if (itemToDelete.type === 'trip') {
-      const newTrips = trips.filter(t => t.id !== itemToDelete.id); setTrips(newTrips);
+      // Optimistic
+      const newTrips = trips.filter(t => t.id !== itemToDelete.id);
+      setTrips(newTrips);
       if (activeTripId === itemToDelete.id) setActiveTripId(newTrips[0]?.id || 0);
+
+      // API
+      await fetch(`/api/trips/${itemToDelete.id}`, { method: 'DELETE' });
     } else {
-      setTrips(trips.map(t => {
-        if (t.id !== activeTripId) return t;
-        return itemToDelete.type === 'person' ? { ...t, people: t.people.filter(p => p.id !== itemToDelete.id) } : { ...t, expenses: t.expenses.filter(e => e.id !== itemToDelete.id) };
-      }));
+      let updatedTrip = { ...activeTrip } as Trip;
+      if (itemToDelete.type === 'person') {
+        updatedTrip.people = updatedTrip.people.filter(p => p.id !== itemToDelete.id);
+      } else {
+        updatedTrip.expenses = updatedTrip.expenses.filter(e => e.id !== itemToDelete.id);
+      }
+
+      setTrips(trips.map(t => t.id === activeTripId ? updatedTrip : t));
+
+      // API Update
+      await fetch(`/api/trips/${activeTrip?.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTrip)
+      });
     }
     setItemToDelete(null);
   };
 
-  // If not authenticated, return null (prevents flashing content before redirect)
-  if (!isAuthenticated) return null;
-  if (!isLoaded) return null;
+  // if (isPending) return null; 
+  // if (!session) return null;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
 
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900">
@@ -200,9 +282,8 @@ export default function Dashboard() {
       {/* --- BACK TO TOP BUTTON --- */}
       <button
         onClick={handleScrollToTop}
-        className={`fixed bottom-8 right-8 bg-[#41644A] text-white p-3 rounded-full shadow-lg hover:bg-[#2e4a34] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${
-          showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
-        }`}
+        className={`fixed bottom-8 right-8 bg-[#41644A] text-white p-3 rounded-full shadow-lg hover:bg-[#2e4a34] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+          }`}
       >
         <ArrowUp size={24} />
       </button>
@@ -215,9 +296,22 @@ export default function Dashboard() {
         onDeleteTrip={(trip: Trip) => handleDeleteItem('trip', trip.id)}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        user={session?.user}
+        onEditProfile={() => {
+          setEditingItem({ name: session?.user?.name, image: session?.user?.image });
+          setModalType('profile');
+          setModalOpen(true);
+        }}
+        onLogout={async () => {
+          await authClient.signOut({
+            fetchOptions: {
+              onSuccess: () => router.push("/")
+            }
+          });
+        }}
       />
 
-      <main className="md:ml-64 flex-1 p-8">
+      <main className="md:ml-64 flex-1 p-4 md:p-8">
 
         {/* --- MASTER CONTAINER --- */}
         <div className="w-full max-w-[96%] mx-auto space-y-6">
@@ -249,12 +343,12 @@ export default function Dashboard() {
 
             <div className="flex gap-3">
               <Link href="/bulk_calculation">
-                <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"><Calculator size={16} /> Calculator</button>
+                <button className="cursor-pointer flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all"><Calculator size={16} /> Calculator</button>
               </Link>
-              {activeTrip && <button onClick={handleExport} className="flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"><Download size={16} /> Export</button>}
+              {activeTrip && <button onClick={handleExport} className="cursor-pointer flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all"><Download size={16} /> Export</button>}
               <button
                 onClick={() => handleAddClick('trip')}
-                className="flex items-center gap-2 px-6 py-2 bg-[#41644A] text-white rounded-lg text-sm font-medium hover:bg-[#2e4a34] transition shadow-sm"
+                className="cursor-pointer flex items-center gap-2 px-6 py-2 bg-[#41644A] text-white rounded-lg text-sm font-medium hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all shadow-sm"
               >
                 <Plus size={16} /> New Trip
               </button>
@@ -262,31 +356,31 @@ export default function Dashboard() {
           </header>
 
           {activeTrip ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <PeopleCard
-                people={activeTrip.people}
-                onAdd={() => handleAddClick('person')}
-                onEdit={(p) => handleEditItem('person', p)}
-                onDelete={(id) => handleDeleteItem('person', id)}
-              />
-              <ExpensesCard
-                expenses={activeTrip.expenses}
-                onAdd={() => handleAddClick('expense')}
-                onEdit={(e) => handleEditItem('expense', e)}
-                onDelete={(id) => handleDeleteItem('expense', id)}
-              />
-              <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <PeopleCard
+                  people={activeTrip.people}
+                  onAdd={() => handleAddClick('person')}
+                  onEdit={(p) => handleEditItem('person', p)}
+                  onDelete={(id) => handleDeleteItem('person', id)}
+                />
+                <ExpensesCard
+                  expenses={activeTrip.expenses}
+                  onAdd={() => handleAddClick('expense')}
+                  onEdit={(e) => handleEditItem('expense', e)}
+                  onDelete={(id) => handleDeleteItem('expense', id)}
+                />
+                <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
+              </div>
+              <div className="space-y-6">
+                <SummaryGrid stats={stats} />
+              </div>
             </div>
-            <div className="space-y-6">
-              <SummaryGrid stats={stats} />
-            </div>
-          </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-96 text-gray-400 text-center">
               <Map size={48} className="mb-4 opacity-20" />
               <p className="mb-4">No trips found. Create one to get started!</p>
-              <button onClick={() => handleAddClick('trip')} className="flex items-center gap-2 px-6 py-3 bg-[#41644A] text-white rounded-xl text-sm font-medium hover:bg-[#2e4a34] transition shadow-sm"><Plus size={18} /> Create First Trip</button>
+              <button onClick={() => handleAddClick('trip')} className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-[#41644A] text-white rounded-xl text-sm font-medium hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all shadow-sm"><Plus size={18} /> Create First Trip</button>
             </div>
           )}
 

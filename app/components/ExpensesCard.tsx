@@ -25,7 +25,7 @@ export const ExpensesCard = ({ expenses, onAdd, onEdit, onDelete }: ExpensesCard
         <h3 className="text-lg font-bold text-gray-800">Expenses</h3>
         <button
           onClick={onAdd}
-          className="flex items-center gap-2 text-sm font-medium bg-[#41644A] text-white hover:bg-[#2e4a34] px-6 py-2 rounded-lg shadow-sm transition-all hover:shadow-md"
+          className="cursor-pointer flex items-center gap-2 text-sm font-medium bg-[#41644A] text-white hover:bg-[#2e4a34] px-6 py-2 rounded-lg shadow-sm transition-all hover:shadow-lg active:scale-95"
         >
           <Plus size={16} /> Add
         </button>
@@ -58,8 +58,8 @@ export const ExpensesCard = ({ expenses, onAdd, onEdit, onDelete }: ExpensesCard
                 ৳{expense.amount.toLocaleString()}
               </div>
               <div className="flex gap-1">
-                <button onClick={() => onEdit(expense)} className="text-gray-300 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 transition"><Pencil size={16} /></button>
-                <button onClick={() => onDelete(expense.id)} className="text-gray-300 hover:text-red-600 p-2 rounded-md hover:bg-red-50 transition"><Trash2 size={16} /></button>
+                <button onClick={() => onEdit(expense)} className="cursor-pointer text-gray-300 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 hover:shadow-md active:scale-90 transition-all"><Pencil size={16} /></button>
+                <button onClick={() => onDelete(expense.id)} className="cursor-pointer text-gray-300 hover:text-red-600 p-2 rounded-md hover:bg-red-50 hover:shadow-md active:scale-90 transition-all"><Trash2 size={16} /></button>
               </div>
             </div>
           </div>

@@ -60,7 +60,7 @@ export const SummaryGrid = ({ stats }: SummaryGridProps) => {
     <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
       <h3 className="text-lg font-bold text-gray-800 mb-5">Trip Summary</h3>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <StatItem
           label="Total Deposits"
           value={stats.totalDeposits.toLocaleString()}
