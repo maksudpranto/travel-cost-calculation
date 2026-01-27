@@ -415,7 +415,7 @@ export default function BulkCalculation() {
         isOpen={showStatusModal}
         onClose={() => setShowStatusModal(false)}
         onConfirm={() => handleToggleStatus('completed')}
-        title="End Bulk Tour?"
+        title="End Group Tour?"
         message="This will lock all input fields and expenses. You can reopen it later if needed."
         confirmText="End Tour"
         cancelText="Keep Editing"

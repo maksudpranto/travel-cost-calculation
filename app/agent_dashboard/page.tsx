@@ -266,7 +266,7 @@ export default function AgentDashboard() {
                                     <span>Agency Overview</span>
                                 </h1>
                                 <p className="text-xs md:text-sm text-gray-400 font-medium mt-1">
-                                    Consolidated statistics for all your bulk tour calculations
+                                    Consolidated statistics for all your group tour calculations
                                 </p>
                             </div>
                         </div>
@@ -285,7 +285,7 @@ export default function AgentDashboard() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard
-                            label="Total Bulk Tours"
+                            label="Total Group Tours"
                             value={stats.totalTours.toString()}
                             icon={Calculator}
                             color="blue"
@@ -313,9 +313,9 @@ export default function AgentDashboard() {
                     {/* Recent Tours List */}
                     <div className="bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                                <Clock className="text-[#10B17D]" size={22} />
-                                Recent Bulk Tours
+                            <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                                <ShieldCheck className="text-[#10B17D]" size={20} />
+                                Recent Group Tours
                             </h3>
                             <Link
                                 href="/calculations"

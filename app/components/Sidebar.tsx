@@ -115,7 +115,19 @@ export const Sidebar = ({
               <div className="space-y-1">
                 {navItems.map((item, index) => {
                   const active = isActive(item.path, item.label);
-                  const isAgentItem = index >= 3;
+                  const isToggleOnly = item.label === 'Ongoing Trips' || item.label === 'Ongoing Group Tours';
+                  const content = (
+                    <div className={`
+                      flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200
+                      ${active
+                        ? 'bg-gradient-to-r from-[#10B17D] to-[#0D8F65] text-white'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+                    `}>
+                      <item.icon size={20} className={active ? 'text-white' : 'text-gray-500 group-hover:text-white'} />
+                      <span className="font-bold text-sm">{item.label}</span>
+                    </div>
+                  );
+
                   return (
                     <React.Fragment key={item.label}>
                       {isAgentMode && index === 3 && (
@@ -126,18 +138,16 @@ export const Sidebar = ({
                         </div>
                       )}
                       <div className="flex items-center gap-1 group/item">
-                        <Link href={item.path} onClick={onClose} className="flex-1">
-                          <div className={`
-                            flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200
-                            ${active
-                              ? 'bg-gradient-to-r from-[#10B17D] to-[#0D8F65] text-white'
-                              : 'text-gray-400 hover:bg-white/5 hover:text-white'}
-                          `}>
-                            <item.icon size={20} className={active ? 'text-white' : 'text-gray-500 group-hover:text-white'} />
-                            <span className="font-bold text-sm">{item.label}</span>
+                        {isToggleOnly ? (
+                          <div onClick={() => toggleSection(item.label)} className="flex-1">
+                            {content}
                           </div>
-                        </Link>
-                        {(item.label === 'Ongoing Trips' || item.label === 'Ongoing Group Tours') && (
+                        ) : (
+                          <Link href={item.path} onClick={onClose} className="flex-1">
+                            {content}
+                          </Link>
+                        )}
+                        {isToggleOnly && (
                           <button
                             onClick={() => toggleSection(item.label)}
                             className={`
