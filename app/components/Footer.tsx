@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Map, Facebook, Twitter, Instagram, Github, Mail, Phone, MapPin } from 'lucide-react';
+import { Map as MapIcon, Facebook, Twitter, Instagram, Github, Mail, Phone, MapPin } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -16,7 +16,7 @@ export default function Footer() {
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-[#10B17D] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#10B17D]/20">
-                <Map size={22} />
+                <MapIcon size={22} />
               </div>
               <span className="text-xl font-black text-white tracking-tight">TravelCost</span>
             </div>

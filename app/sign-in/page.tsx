@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Map, Loader2, ArrowLeft } from "lucide-react";
+import { Map as MapIcon, Loader2, ArrowLeft } from "lucide-react";
 
 function SignInContent() {
     const router = useRouter();
@@ -137,7 +137,7 @@ function SignInContent() {
                                 <div className="text-center mb-10">
                                     <Link href="/" className="inline-flex justify-center items-center gap-3 mb-6 group">
                                         <div className="w-12 h-12 bg-[#10B17D] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#10B17D]/20 group-hover:scale-105 transition-transform duration-300">
-                                            <Map size={24} />
+                                            <MapIcon size={24} />
                                         </div>
                                         <span className="text-2xl font-black tracking-tight text-gray-900">TravelCost</span>
                                     </Link>

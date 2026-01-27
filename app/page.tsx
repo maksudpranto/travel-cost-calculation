@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Map, ArrowRight, Wallet, Users, BarChart3, ShieldCheck, LogIn, Menu, X } from 'lucide-react';
+import { Map as MapIcon, ArrowRight, Wallet, Users, BarChart3, ShieldCheck, LogIn, Menu, X } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import Image from 'next/image';
 import Footer from '@/app/components/Footer';
@@ -35,7 +35,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-colors ${scrolled ? 'bg-[#10B17D] text-white shadow-lg shadow-[#10B17D]/20' : 'bg-white/20 text-white backdrop-blur-sm'
               }`}>
-              <Map size={22} />
+              <MapIcon size={22} />
             </div>
             <span className={`text-xl font-black tracking-tight transition-colors ${scrolled ? 'text-gray-900' : 'text-white'
               }`}>

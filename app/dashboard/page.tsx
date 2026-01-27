@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
-import { Plus, Download, Menu, Map, ArrowUp, Calendar } from "lucide-react";
+import { Plus, Download, Menu, Map as MapIcon, ArrowUp, Calendar } from "lucide-react";
 import { authClient } from '@/lib/auth-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -387,7 +387,7 @@ function DashboardContent() {
           ) : (
             <div className="flex flex-col items-center justify-center h-[60vh] text-center bg-white rounded-3xl border border-gray-100 shadow-sm">
               <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200 mb-6">
-                <Map size={40} />
+                <MapIcon size={40} />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">No active trips found</h3>
               <p className="text-gray-400 max-w-xs mb-8">Create your first trip or select one from the sidebar to start tracking expenses.</p>

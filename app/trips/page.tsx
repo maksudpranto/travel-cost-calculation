@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Menu, Map, Calendar, Users, Receipt, ArrowUp, ChevronRight, Edit2, Trash2, Wallet } from "lucide-react";
+import { Plus, Menu, Map as MapIcon, Calendar, Users, Receipt, ArrowUp, ChevronRight, Edit2, Trash2, Wallet } from "lucide-react";
 import { Sidebar } from '../components/Sidebar';
 import { AddModal, DeleteConfirmModal } from '../components/Modals';
 import { authClient } from '@/lib/auth-client';
@@ -147,7 +147,7 @@ export default function TripsPage() {
                     {trips.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-[50vh] text-center bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
                             <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200 mb-6">
-                                <Map size={32} className="md:size-[40px]" />
+                                <MapIcon size={32} className="md:size-[40px]" />
                             </div>
                             <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">No trips found</h3>
                             <button onClick={handleAddTrip} className="cursor-pointer flex items-center gap-2 px-8 py-3 bg-[#10B17D] text-white rounded-xl font-bold hover:bg-[#0D8F65] transition-all">
@@ -162,7 +162,7 @@ export default function TripsPage() {
                                     <div key={trip.id} className="group bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-xl hover:border-[#10B17D]/20 transition-all duration-300 flex flex-col">
                                         <div className="flex justify-between items-start mb-4">
                                             <div className="p-3 bg-gray-50 rounded-2xl group-hover:bg-[#10B17D]/10 group-hover:text-[#10B17D] transition-colors">
-                                                <Map size={24} />
+                                                <MapIcon size={24} />
                                             </div>
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => handleEditTrip(trip)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600 transition-colors"><Edit2 size={16} /></button>

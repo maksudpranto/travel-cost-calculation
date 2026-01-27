@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Map, LayoutDashboard, Calculator, Settings, LogOut, X, User as UserIcon, Moon, Sun, Edit2, Trash2 } from 'lucide-react';
+import { Map as MapIcon, LayoutDashboard, Calculator, Settings, LogOut, X, User as UserIcon, Moon, Sun, Edit2, Trash2 } from 'lucide-react';
 import { Trip } from '../type';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -44,7 +44,7 @@ export const Sidebar = ({
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Map, label: 'Trips', path: '/trips' },
+    { icon: MapIcon, label: 'Trips', path: '/trips' },
     { icon: Calculator, label: 'Calculator', path: '/bulk_calculation' },
   ];
 
@@ -70,7 +70,7 @@ export const Sidebar = ({
           <div className="p-8 pb-10 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-[#10B17D] to-[#0D8F65] rounded-xl flex items-center justify-center shadow-lg shadow-[#10B17D]/20">
-                <Map className="text-white" size={24} />
+                <MapIcon className="text-white" size={24} />
               </div>
               <span className="text-xl font-black text-white tracking-tight">TravelCost</span>
             </div>
