@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Map as MapIcon, LayoutDashboard, Calculator, Settings, LogOut, X, User as UserIcon, Moon, Sun, Edit2, Trash2, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Map as MapIcon, LayoutDashboard, Calculator, Settings, LogOut, X, User as UserIcon, Moon, Sun, Edit2, Trash2, ShieldCheck, ShieldAlert, ChevronDown, Lock } from 'lucide-react';
 import { Trip } from '../type';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -41,14 +41,28 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const pathname = usePathname();
   const { isAgentMode, toggleAgentMode } = useAgentMode();
+  const [expandedSections, setExpandedSections] = React.useState<string[]>(['Trips', 'Bulk Tours']);
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/bulk_calculation') {
+      return pathname === '/bulk_calculation' && !activeTripId;
+    }
+    return pathname === path;
+  };
+
+  const toggleSection = (label: string) => {
+    setExpandedSections(prev =>
+      prev.includes(label)
+        ? prev.filter(s => s !== label)
+        : [...prev, label]
+    );
+  };
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: MapIcon, label: 'Trips', path: '/trips' },
     ...(isAgentMode ? [
-      { icon: Calculator, label: 'New Bulk Tour', path: '/bulk_calculation' },
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/agent_dashboard' },
       { icon: ShieldCheck, label: 'Bulk Tours', path: '/calculations' }
     ] : []),
   ];
@@ -102,21 +116,35 @@ export const Sidebar = ({
                           <div className="h-[1px] flex-1 bg-white/5" />
                         </div>
                       )}
-                      <Link href={item.path} onClick={onClose}>
-                        <div className={`
-                          flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200 group
-                          ${active
-                            ? 'bg-gradient-to-r from-[#10B17D] to-[#0D8F65] text-white'
-                            : 'text-gray-400 hover:bg-white/5 hover:text-white'}
-                        `}>
-                          <item.icon size={20} className={active ? 'text-white' : 'text-gray-500 group-hover:text-white'} />
-                          <span className="font-bold text-sm">{item.label}</span>
-                        </div>
-                      </Link>
+                      <div className="flex items-center gap-1 group/item">
+                        <Link href={item.path} onClick={onClose} className="flex-1">
+                          <div className={`
+                            flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200
+                            ${active
+                              ? 'bg-gradient-to-r from-[#10B17D] to-[#0D8F65] text-white'
+                              : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+                          `}>
+                            <item.icon size={20} className={active ? 'text-white' : 'text-gray-500 group-hover:text-white'} />
+                            <span className="font-bold text-sm">{item.label}</span>
+                          </div>
+                        </Link>
+                        {(item.label === 'Trips' || item.label === 'Bulk Tours') && (
+                          <button
+                            onClick={() => toggleSection(item.label)}
+                            className={`
+                              p-2 mr-2 rounded-xl transition-all duration-300
+                              ${expandedSections.includes(item.label) ? 'rotate-180' : 'rotate-0'}
+                              text-gray-500 hover:text-white hover:bg-white/5
+                            `}
+                          >
+                            <ChevronDown size={16} />
+                          </button>
+                        )}
+                      </div>
 
                       {/* Trips Sub-items (Your Journeys) */}
-                      {item.label === 'Trips' && trips.filter(t => t.type !== 'bulk').length > 0 && (
-                        <div className="ml-9 mt-2 mb-4 space-y-1">
+                      {item.label === 'Trips' && expandedSections.includes('Trips') && trips.filter(t => t.type !== 'bulk').length > 0 && (
+                        <div className="ml-9 mt-2 mb-4 space-y-1 overflow-hidden transition-all duration-300">
                           {trips.filter(t => t.type !== 'bulk').map((trip) => {
                             const isTripActive = activeTripId === trip.id;
                             return (
@@ -151,8 +179,8 @@ export const Sidebar = ({
                         </div>
                       )}
                       {/* Bulk Calculations Sub-items */}
-                      {item.label === 'Bulk Tours' && trips.filter(t => t.type === 'bulk').length > 0 && (
-                        <div className="ml-9 mt-2 mb-4 space-y-1">
+                      {item.label === 'Bulk Tours' && expandedSections.includes('Bulk Tours') && trips.filter(t => t.type === 'bulk').length > 0 && (
+                        <div className="ml-9 mt-2 mb-4 space-y-1 overflow-hidden transition-all duration-300">
                           {trips.filter(t => t.type === 'bulk').map((trip) => {
                             const isTripActive = activeTripId === trip.id;
                             return (
@@ -166,7 +194,10 @@ export const Sidebar = ({
                                 `}
                                 onClick={() => { onSelectTrip(trip.id); onClose(); }}
                               >
-                                <span className="truncate font-bold text-[13px]">{trip.name}</span>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="truncate font-bold text-[13px]">{trip.name}</span>
+                                  {trip.status === 'completed' && <Lock size={12} className="text-amber-500 shrink-0" />}
+                                </div>
                                 <div className={`flex items-center gap-1 ${isTripActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); onEditTrip(trip); onClose(); }}

@@ -21,7 +21,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
 
         const data = await req.json();
         // Destructure to prevent overwriting protected fields like _id or userId if passed malicious data
-        const { name, currency, startDate, endDate, people, expenses, type, touristCount, feePerPerson } = data;
+        const { name, currency, startDate, endDate, people, expenses, type, touristCount, feePerPerson, status } = data;
 
         const client = await clientPromise;
         const db = client.db();
@@ -37,6 +37,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         if (type !== undefined) updateDoc.type = type;
         if (touristCount !== undefined) updateDoc.touristCount = touristCount;
         if (feePerPerson !== undefined) updateDoc.feePerPerson = feePerPerson;
+        if (status !== undefined) updateDoc.status = status;
 
         const result = await db.collection("trips").updateOne(
             { id: tripId, userId: session.user.id },

@@ -4,7 +4,7 @@ import { X, User, FileText, Calendar as CalendarIcon, ChevronDown } from 'lucide
 interface AddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'person' | 'expense' | 'trip' | 'profile';
+  type: 'person' | 'expense' | 'trip' | 'profile' | 'bulk_trip';
   onSave: (data: any) => void;
   initialData?: any;
 }
@@ -88,6 +88,8 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [touristCount, setTouristCount] = useState('');
+  const [feePerPerson, setFeePerPerson] = useState('');
 
   // For Profile
   const [imageUrl, setImageUrl] = useState('');
@@ -108,6 +110,10 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
       } else if (type === 'profile') {
         setName(initialData.name || '');
         setImageUrl(initialData.image || '');
+      } else if (type === 'bulk_trip') {
+        setName(initialData.name || '');
+        setTouristCount(initialData.touristCount?.toString() || '');
+        setFeePerPerson(initialData.feePerPerson?.toString() || '');
       }
     } else {
       setName('');
@@ -118,6 +124,8 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
       setStartDate('');
       setEndDate('');
       setImageUrl('');
+      setTouristCount('');
+      setFeePerPerson('');
     }
   }, [initialData, type, isOpen]);
 
@@ -131,6 +139,8 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
       onSave({ name, startDate, endDate });
     } else if (type === 'profile') {
       onSave({ name, image: imageUrl });
+    } else if (type === 'bulk_trip') {
+      onSave({ name, touristCount: Number(touristCount), feePerPerson: Number(feePerPerson) });
     } else {
       onSave({ item, description, amount: Number(amount) });
     }
@@ -163,7 +173,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
             </h3>
             <p className="text-[10px] font-black text-[#10B17D] uppercase tracking-[0.3em] opacity-100 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B17D] animate-pulse"></span>
-              {type === 'person' ? 'Active Participant' : type === 'expense' ? 'New Transaction' : type === 'trip' ? 'Planning Journey' : 'Personal Data'}
+              {type === 'person' ? 'Active Participant' : type === 'expense' ? 'New Transaction' : type === 'trip' ? 'Planning Journey' : type === 'bulk_trip' ? 'New Calculation' : 'Personal Data'}
             </p>
           </div>
           <button onClick={onClose} className="cursor-pointer text-gray-300 hover:text-rose-500 hover:bg-rose-50 p-3 rounded-2xl transition-all duration-300 active:scale-90">
@@ -183,7 +193,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
                   <div className="absolute left-6 top-5 text-gray-300 group-focus-within:text-[#10B17D] transition-colors">
                     <User size={20} strokeWidth={2.5} />
                   </div>
-                  <input required type="text" placeholder="Update your public name" value={name} onChange={(e) => setName(e.target.value)} className={`${inputStyle} h-16 pl-16`} />
+                  <input required type="text" placeholder="e.g. Pranto" value={name} onChange={(e) => setName(e.target.value)} className={`${inputStyle} h-16 pl-16`} />
                 </div>
               </div>
               <div>
@@ -260,6 +270,39 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
             </div>
           )}
 
+          {/* --- BULK TRIP FORM --- */}
+          {type === 'bulk_trip' && (
+            <div className="space-y-8">
+              <div>
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">Tour Name</label>
+                <div className="relative group">
+                  <div className="absolute left-6 top-5 text-gray-300 group-focus-within:text-[#10B17D] transition-colors">
+                    <FileText size={20} strokeWidth={2.5} />
+                  </div>
+                  <input required type="text" placeholder="e.g. Sajek Valley Tour" value={name} onChange={(e) => setName(e.target.value)} className={`${inputStyle} h-16 pl-16`} />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">No. of People</label>
+                  <div className="relative group">
+                    <div className="absolute left-6 top-5 text-gray-300 group-focus-within:text-[#10B17D] transition-colors">
+                      <User size={20} strokeWidth={2.5} />
+                    </div>
+                    <input required type="number" min="1" placeholder="0" value={touristCount} onChange={(e) => setTouristCount(e.target.value)} className={`${inputStyle} h-16 pl-16`} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">Event Fee</label>
+                  <div className="relative group">
+                    <div className="absolute left-6 top-5 text-2xl font-black text-gray-300 group-focus-within:text-[#10B17D] transition-colors leading-none">৳</div>
+                    <input required type="number" min="0" placeholder="0.00" value={feePerPerson} onChange={(e) => setFeePerPerson(e.target.value)} className={`${inputStyle} h-16 pl-16`} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-gray-50">
             <button type="button" onClick={onClose} className="cursor-pointer flex-1 h-16 bg-white border-2 border-gray-100 text-gray-400 font-black text-sm rounded-[24px] hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all duration-300 active:scale-95">
               Discard
@@ -294,6 +337,59 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, title, message 
           </button>
           <button onClick={onConfirm} className="cursor-pointer flex-1 h-16 bg-rose-500 text-white font-black text-sm rounded-[24px] hover:bg-rose-600 transition-all duration-300 active:scale-95 shadow-lg shadow-rose-500/10">
             Confirm Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText, cancelText, variant = 'danger' }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'danger' | 'success' | 'warning';
+}) => {
+  if (!isOpen) return null;
+
+  const variantStyles = {
+    danger: {
+      bg: 'bg-rose-50',
+      text: 'text-rose-500',
+      button: 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/10'
+    },
+    success: {
+      bg: 'bg-emerald-50',
+      text: 'text-emerald-500',
+      button: 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/10'
+    },
+    warning: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-500',
+      button: 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/10'
+    }
+  };
+
+  const style = variantStyles[variant];
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xl flex items-center justify-center p-4 z-50 transition-all duration-500">
+      <div className="bg-white rounded-[28px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] w-full max-w-lg p-12 animate-in fade-in zoom-in duration-500 border border-white/40">
+        <div className={`w-20 h-20 ${style.bg} ${style.text} rounded-[28px] flex items-center justify-center mb-8 shadow-sm`}>
+          <FileText size={40} strokeWidth={3} />
+        </div>
+        <h3 className="text-3xl font-black text-gray-900 mb-4 tracking-tighter leading-tight">{title}</h3>
+        <p className="text-base font-bold text-gray-400 mb-12 leading-relaxed">{message}</p>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button onClick={onClose} className="cursor-pointer flex-1 h-16 bg-white border-2 border-gray-100 text-gray-400 font-black text-sm rounded-[24px] hover:bg-gray-50 hover:text-gray-600 transition-all duration-300">
+            {cancelText || "Cancel"}
+          </button>
+          <button onClick={onConfirm} className={`cursor-pointer flex-1 h-16 ${style.button} text-white font-black text-sm rounded-[24px] transition-all duration-300 shadow-lg`}>
+            {confirmText || "Confirm"}
           </button>
         </div>
       </div>

@@ -17,13 +17,15 @@ import {
   Receipt,
   Coins,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  Lock,
+  Unlock
 } from "lucide-react";
 import Link from 'next/link';
 import { authClient } from '@/lib/auth-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from './Sidebar';
-import { AddModal, DeleteConfirmModal } from './Modals';
+import { AddModal, DeleteConfirmModal, ConfirmModal } from "./Modals";
 import { Trip } from '../type';
 import { useAgentMode } from '../context/AgentModeContext';
 
@@ -37,14 +39,17 @@ export default function BulkCalculation() {
   const [currentTripId, setCurrentTripId] = useState<number | null>(null);
   const [activeTripName, setActiveTripName] = useState<string>("New Calculation");
   const [isSaving, setIsSaving] = useState(false);
+  const [isBasicLocked, setIsBasicLocked] = useState(false);
+  const [isBasicDetailsEditing, setIsBasicDetailsEditing] = useState(true);
 
   // --- APP STATE (For Sidebar & Navigation) ---
   const [trips, setTrips] = useState<Trip[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'profile' | 'trip'>('profile');
+  const [modalType, setModalType] = useState<'profile' | 'trip' | 'bulk_trip'>('profile');
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
-  const [itemToDelete, setItemToDelete] = useState<{ type: 'expense' | 'trip', id: number } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip' | 'profile'; id: number } | null>(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   // --- FETCH TRIPS FOR SIDEBAR & SELECTION ---
   const fetchTrips = async () => {
@@ -79,6 +84,7 @@ export default function BulkCalculation() {
   // --- CORE CALCULATOR STATE ---
   const [touristCount, setTouristCount] = useState<number | ''>('');
   const [feePerPerson, setFeePerPerson] = useState<number | ''>('');
+  const [tourStatus, setTourStatus] = useState<'active' | 'completed'>('active');
   const [expenses, setExpenses] = useState<{ id: number; item: string; amount: number }[]>([]);
 
   // --- FORM STATE ---
@@ -96,30 +102,48 @@ export default function BulkCalculation() {
   useEffect(() => {
     const tripId = searchParams.get('tripId');
 
-    if (tripId && trips.length > 0) {
-      const selected = trips.find(t => t.id === parseInt(tripId));
-      if (selected && selected.type === 'bulk') {
-        setCurrentTripId(selected.id);
-        setActiveTripName(selected.name);
-        setTouristCount(selected.touristCount ?? '');
-        setFeePerPerson(selected.feePerPerson ?? '');
-        setExpenses(selected.expenses.map(e => ({ id: e.id, item: e.item, amount: e.amount })));
-      }
-    } else if (!tripId && !isLoaded) {
-      const saved = localStorage.getItem('bulk_calc_data');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          setTouristCount(data.touristCount ?? '');
-          setFeePerPerson(data.feePerPerson ?? '');
-          setExpenses(data.expenses || []);
-        } catch (e) {
-          console.error("Failed to load local data", e);
+    if (tripId) {
+      if (trips.length > 0) {
+        const selected = trips.find(t => t.id === parseInt(tripId));
+        if (selected && selected.type === 'bulk') {
+          setCurrentTripId(selected.id);
+          setActiveTripName(selected.name);
+          setTouristCount(selected.touristCount ?? '');
+          setFeePerPerson(selected.feePerPerson ?? '');
+          setTourStatus(selected.status || 'active');
+          setIsBasicLocked(!!selected.status); // Lock by default if it's a saved trip
+          setExpenses(selected.expenses.map(e => ({ id: e.id, item: e.item, amount: e.amount })));
         }
+      }
+    } else {
+      // No tripId - this is a "New Calculation"
+      setCurrentTripId(null);
+      setActiveTripName("New Calculation");
+
+      if (!isLoaded) {
+        // Initial load: try to restore draft from localStorage
+        const saved = localStorage.getItem('bulk_calc_data');
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            setTouristCount(data.touristCount ?? '');
+            setFeePerPerson(data.feePerPerson ?? '');
+            setExpenses(data.expenses || []);
+          } catch (e) {
+            console.error("Failed to load local data", e);
+          }
+        }
+      } else {
+        // We're already loaded and tripId became null (user clicked "New" or sidebar link)
+        // Reset everything to start fresh
+        setTouristCount('');
+        setFeePerPerson('');
+        setExpenses([]);
+        localStorage.removeItem('bulk_calc_data');
       }
     }
     setIsLoaded(true);
-  }, [searchParams, trips, isLoaded]);
+  }, [searchParams, trips]);
 
   // Persist to localStorage for "New Calculations" only
   useEffect(() => {
@@ -132,12 +156,8 @@ export default function BulkCalculation() {
   // --- HANDLERS ---
 
   const handleNewCalculation = () => {
-    setCurrentTripId(null);
-    setActiveTripName("New Calculation");
-    setTouristCount('');
-    setFeePerPerson('');
-    setExpenses([]);
-    router.push('/bulk_calculation');
+    setModalType('bulk_trip');
+    setModalOpen(true);
   };
 
   const handleSaveClick = () => {
@@ -161,11 +181,12 @@ export default function BulkCalculation() {
           type: 'bulk',
           touristCount,
           feePerPerson,
+          status: tourStatus,
           expenses
         })
       });
       if (res.ok) {
-        fetchTrips();
+        fetchTrips(); // Ensure trips are re-fetched after update
       }
     } catch (e) {
       console.error("Failed to update trip", e);
@@ -174,7 +195,7 @@ export default function BulkCalculation() {
     }
   };
 
-  const handleAddTrip = async (data: { name: string }) => {
+  const handleAddTrip = async (data: any) => {
     setIsSaving(true);
     try {
       const res = await fetch("/api/trips", {
@@ -183,8 +204,9 @@ export default function BulkCalculation() {
         body: JSON.stringify({
           name: data.name,
           type: 'bulk',
-          touristCount,
-          feePerPerson,
+          touristCount: data.touristCount || touristCount,
+          feePerPerson: data.feePerPerson || feePerPerson,
+          status: tourStatus,
           expenses: expenses.map(e => ({ id: e.id, item: e.item, amount: e.amount }))
         }),
       });
@@ -193,8 +215,12 @@ export default function BulkCalculation() {
         const newTrip = await res.json();
         setCurrentTripId(newTrip.id);
         setActiveTripName(newTrip.name);
+        setTouristCount(data.touristCount || '');
+        setFeePerPerson(data.feePerPerson || '');
+        setExpenses([]);
+        setTourStatus('active');
         setModalOpen(false);
-        fetchTrips();
+        fetchTrips(); // Ensure trips are re-fetched after add
         router.push(`/bulk_calculation?tripId=${newTrip.id}`);
       }
     } catch (error) {
@@ -283,6 +309,34 @@ export default function BulkCalculation() {
     setItemToDelete(null);
   };
 
+  const handleToggleStatus = async (newStatus: 'active' | 'completed') => {
+    if (!currentTripId) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/trips/${currentTripId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: activeTripName,
+          type: 'bulk',
+          touristCount,
+          feePerPerson,
+          status: newStatus,
+          expenses: expenses.map(e => ({ id: e.id, item: e.item, amount: e.amount }))
+        })
+      });
+      if (res.ok) {
+        setTourStatus(newStatus);
+        fetchTrips(); // Re-fetch to update sidebar status
+      }
+    } catch (e) {
+      console.error("Failed to update trip status", e);
+    } finally {
+      setIsSaving(false);
+      setShowStatusModal(false);
+    }
+  };
+
   // --- HELPER COMPONENTS ---
   const StatItem = ({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) => {
     const colorMap: Record<string, string> = {
@@ -324,7 +378,6 @@ export default function BulkCalculation() {
             setModalOpen(false);
           } else if (modalType === 'trip') {
             if (editingTrip) {
-              // Rename Existing Trip
               await fetch(`/api/trips/${editingTrip.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -335,6 +388,8 @@ export default function BulkCalculation() {
             } else {
               await handleAddTrip(data);
             }
+          } else if (modalType === 'bulk_trip') {
+            await handleAddTrip(data);
           }
         }}
         initialData={editingTrip ? { name: editingTrip.name } : (modalType === 'profile' ? { name: session?.user?.name, image: session?.user?.image } : undefined)}
@@ -344,8 +399,19 @@ export default function BulkCalculation() {
         isOpen={!!itemToDelete}
         onClose={() => setItemToDelete(null)}
         onConfirm={confirmDelete}
-        title={itemToDelete?.type === 'trip' ? "Delete Calculation?" : "Delete Expense?"}
+        title={`Remove ${itemToDelete?.type}?`}
         message={itemToDelete?.type === 'trip' ? "This will permanently remove this saved calculation." : "Are you sure you want to remove this expense?"}
+      />
+
+      <ConfirmModal
+        isOpen={showStatusModal}
+        onClose={() => setShowStatusModal(false)}
+        onConfirm={() => handleToggleStatus('completed')}
+        title="End Bulk Tour?"
+        message="This will lock all input fields and expenses. You can reopen it later if needed."
+        confirmText="End Tour"
+        cancelText="Keep Editing"
+        variant="warning"
       />
 
       <Sidebar
@@ -452,14 +518,31 @@ export default function BulkCalculation() {
                   <Plus size={16} />
                   <span>New</span>
                 </button>
-                <button
-                  onClick={handleSaveClick}
-                  disabled={isSaving}
-                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all cursor-pointer ${isSaving ? 'bg-gray-400' : 'bg-[#10B17D] hover:bg-[#0D8F65] shadow-[#10B17D]/20'}`}
-                >
-                  <ShieldCheck size={16} />
-                  <span>{currentTripId ? 'Save Changes' : 'Save As Trip'}</span>
-                </button>
+                {!currentTripId && (
+                  <button
+                    onClick={handleSaveClick}
+                    disabled={isSaving}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all cursor-pointer ${isSaving ? 'bg-gray-400' : 'bg-[#10B17D] hover:bg-[#0D8F65] shadow-[#10B17D]/20'}`}
+                  >
+                    <ShieldCheck size={16} />
+                    <span>Save As Trip</span>
+                  </button>
+                )}
+                {currentTripId && (
+                  <button
+                    onClick={() => {
+                      if (tourStatus === 'active') {
+                        setShowStatusModal(true);
+                      } else {
+                        handleToggleStatus('active');
+                      }
+                    }}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${tourStatus === 'completed' ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-200' : 'bg-rose-500 text-white hover:bg-rose-600 shadow-rose-200'} shadow-lg`}
+                  >
+                    {tourStatus === 'completed' ? <Unlock size={16} /> : <Lock size={16} />}
+                    <span>{tourStatus === 'completed' ? 'Reopen Tour' : 'End Tour'}</span>
+                  </button>
+                )}
               </div>
             </header>
 
@@ -478,7 +561,7 @@ export default function BulkCalculation() {
                 color="rose"
               />
               <StatItem
-                label="Remaining Fund"
+                label={tourStatus === 'completed' ? "Total Profit" : "Remaining Fund"}
                 value={stats.remaining.toLocaleString()}
                 icon={Coins}
                 color={stats.remaining >= 0 ? "emerald" : "rose"}
@@ -497,10 +580,37 @@ export default function BulkCalculation() {
 
                 {/* Tour Configuration */}
                 <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
-                  <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <Users className="text-[#10B17D]" size={20} />
-                    Basic Details
-                  </h3>
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-4">
+                      <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <Users className="text-[#10B17D]" size={20} />
+                        Basic Details
+                      </h3>
+                      {!isBasicLocked && tourStatus !== 'completed' && (
+                        <button
+                          onClick={() => {
+                            if (currentTripId) {
+                              updateSavedTrip();
+                            }
+                            setIsBasicLocked(true);
+                          }}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all cursor-pointer ${isSaving ? 'bg-gray-400' : 'bg-[#10B17D] hover:bg-[#0D8F65] shadow-[#10B17D]/20'}`}
+                        >
+                          <Check size={16} />
+                          <span>Save</span>
+                        </button>
+                      )}
+                      {isBasicLocked && tourStatus !== 'completed' && (
+                        <button
+                          onClick={() => setIsBasicLocked(false)}
+                          className="p-2 text-gray-400 hover:text-[#10B17D] hover:bg-gray-50 rounded-xl transition-all active:scale-95 cursor-pointer"
+                          title="Edit Basic Details"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total Tourists</label>
@@ -516,7 +626,8 @@ export default function BulkCalculation() {
                             setTouristCount(val === '' ? '' : Math.max(0, parseInt(val)));
                             if (error) setError(null);
                           }}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#10B17D]/20 focus:border-[#10B17D] outline-none transition-all"
+                          disabled={tourStatus === 'completed' || isBasicLocked}
+                          className={`w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#10B17D]/20 focus:border-[#10B17D] outline-none transition-all ${tourStatus === 'completed' || isBasicLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     </div>
@@ -535,7 +646,8 @@ export default function BulkCalculation() {
                             setFeePerPerson(val === '' ? '' : Math.max(0, parseFloat(val)));
                             if (error) setError(null);
                           }}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#10B17D]/20 focus:border-[#10B17D] outline-none transition-all"
+                          disabled={tourStatus === 'completed' || isBasicLocked}
+                          className={`w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#10B17D]/20 focus:border-[#10B17D] outline-none transition-all ${tourStatus === 'completed' || isBasicLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     </div>
@@ -571,7 +683,8 @@ export default function BulkCalculation() {
                           setNewItem(e.target.value);
                           if (error) setError(null);
                         }}
-                        className="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#10B17D] focus:ring-2 focus:ring-[#10B17D]/20 transition-all font-medium"
+                        disabled={tourStatus === 'completed'}
+                        className={`w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#10B17D] focus:ring-2 focus:ring-[#10B17D]/20 transition-all font-medium ${tourStatus === 'completed' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                     <div className="flex gap-4">
@@ -586,14 +699,17 @@ export default function BulkCalculation() {
                             setNewAmount(e.target.value);
                             if (error) setError(null);
                           }}
-                          className="w-full pl-8 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#10B17D] focus:ring-2 focus:ring-[#10B17D]/20 transition-all font-bold"
+                          disabled={tourStatus === 'completed'}
+                          className={`w-full pl-8 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#10B17D] focus:ring-2 focus:ring-[#10B17D]/20 transition-all font-bold ${tourStatus === 'completed' ? 'opacity-50 cursor-not-allowed' : ''}`}
                         />
                       </div>
                       <button
                         type="submit"
-                        className="p-3 bg-[#10B17D] text-white rounded-xl hover:bg-[#0D8F65] shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95 flex items-center justify-center min-w-[52px]"
+                        disabled={tourStatus === 'completed'}
+                        className={`px-6 bg-[#10B17D] text-white rounded-xl hover:bg-[#0D8F65] shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95 flex items-center justify-center gap-2 font-bold ${tourStatus === 'completed' ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        {editingId ? <Check size={24} /> : <Plus size={24} />}
+                        {editingId ? <Check size={18} /> : <Plus size={18} />}
+                        <span>{editingId ? 'Save' : 'Add'}</span>
                       </button>
                     </div>
                   </form>
@@ -650,10 +766,10 @@ export default function BulkCalculation() {
                           <div className="flex items-center gap-3">
                             <span className="font-bold text-gray-700 text-sm">৳{e.amount.toLocaleString()}</span>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => startEdit(e)} className="p-1.5 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-lg transition-colors cursor-pointer">
+                              <button onClick={() => startEdit(e)} disabled={tourStatus === 'completed'} className={`p-1.5 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-lg transition-colors cursor-pointer ${tourStatus === 'completed' ? 'opacity-10 cursor-not-allowed' : ''}`}>
                                 <Pencil size={14} />
                               </button>
-                              <button onClick={() => setItemToDelete({ type: 'expense', id: e.id })} className="p-1.5 text-gray-300 hover:text-rose-500 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                              <button onClick={() => setItemToDelete({ type: 'expense', id: e.id })} disabled={tourStatus === 'completed'} className={`p-1.5 text-gray-300 hover:text-rose-500 hover:bg-white rounded-lg transition-colors cursor-pointer ${tourStatus === 'completed' ? 'opacity-10 cursor-not-allowed' : ''}`}>
                                 <Trash2 size={14} />
                               </button>
                             </div>
@@ -664,16 +780,17 @@ export default function BulkCalculation() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-      </main>
+            </div >
+          </div >
+        )
+        }
+      </main >
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #f1f1f1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #e5e7eb; }
       `}</style>
-    </div>
+    </div >
   );
 }

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         }
 
         const data = await req.json();
-        const { id, name, currency, startDate, endDate, people, expenses, type, touristCount, feePerPerson } = data;
+        const { id, name, currency, startDate, endDate, people, expenses, type, touristCount, feePerPerson, status } = data;
 
         if (!name) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -56,6 +56,7 @@ export async function POST(req: Request) {
             type: type || "regular",
             touristCount,
             feePerPerson,
+            status: status || "active",
             people: people || [],
             expenses: expenses || [],
             createdAt: new Date(),
