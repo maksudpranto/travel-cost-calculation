@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Menu, Map as MapIcon, Calendar, Users, Receipt, ArrowUp, ChevronRight, Edit2, Trash2, Wallet, ShieldCheck } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Plus, Menu, LayoutDashboard, ShieldCheck, ChevronRight, Edit2, Trash2 } from "lucide-react";
 import { Sidebar } from '../components/Sidebar';
 import { AddModal, DeleteConfirmModal } from '../components/Modals';
 import { authClient } from '@/lib/auth-client';
@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { Trip } from '../type';
 import { TripCard } from '../components/TripCard';
 
-export default function TripsPage() {
+export default function CalculationsPage() {
     const { data: session } = authClient.useSession();
     const router = useRouter();
 
@@ -41,12 +41,6 @@ export default function TripsPage() {
         else if (!isLoading) setIsLoading(false);
     }, [session]);
 
-    const handleAddTrip = () => {
-        setEditingItem(null);
-        setModalType('trip');
-        setModalOpen(true);
-    };
-
     const handleEditTrip = (trip: Trip) => {
         setEditingItem(trip);
         setModalType('trip');
@@ -72,23 +66,16 @@ export default function TripsPage() {
         }
 
         if (editingItem) {
-            const updatedTrip = { ...editingItem, ...data };
+            const updatedTrip = { ...editingItem, name: data.name };
             setTrips(trips.map(t => t.id === editingItem.id ? updatedTrip : t));
             await fetch(`/api/trips/${editingItem.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedTrip)
-            });
-        } else {
-            const newTrip = { id: Date.now(), ...data, currency: "BDT", people: [], expenses: [] };
-            setTrips([...trips, newTrip]);
-            await fetch("/api/trips", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newTrip)
+                body: JSON.stringify({ name: data.name })
             });
         }
         setModalOpen(false);
+        setEditingItem(null);
     };
 
     const formatDate = (dateStr: string) => {
@@ -96,17 +83,26 @@ export default function TripsPage() {
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const bulkTrips = trips.filter(t => t.type === 'bulk');
+
     if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
 
     return (
         <div className="flex min-h-screen bg-[#FDFDFD] font-sans text-gray-900">
-            <AddModal isOpen={modalOpen} onClose={() => setModalOpen(false)} type={modalType} onSave={handleSave} initialData={editingItem} />
-            <DeleteConfirmModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} title="Delete Trip?" message="This will delete the trip and all its data." />
+            <AddModal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingItem(null); }} type={modalType} onSave={handleSave} initialData={editingItem} />
+            <DeleteConfirmModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} title="Delete Calculation?" message="This will permanently remove this saved calculation." />
 
             <Sidebar
                 trips={trips}
                 activeTripId={0}
-                onSelectTrip={(id) => router.push(`/dashboard?tripId=${id}`)}
+                onSelectTrip={(id) => {
+                    const trip = trips.find(t => t.id === id);
+                    if (trip?.type === 'bulk') {
+                        router.push(`/bulk_calculation?tripId=${id}`);
+                    } else {
+                        router.push(`/dashboard?tripId=${id}`);
+                    }
+                }}
                 onEditTrip={handleEditTrip}
                 onDeleteTrip={(trip) => handleDeleteTrip(trip.id)}
                 isOpen={sidebarOpen}
@@ -132,33 +128,40 @@ export default function TripsPage() {
                                 <Menu size={24} />
                             </button>
                             <div className="min-w-0">
-                                <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Your Trips</h1>
-                                <p className="text-xs md:text-sm text-gray-400 font-medium mt-1">Manage all your journeys in one place</p>
+                                <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Saved Calculations</h1>
+                                <p className="text-xs md:text-sm text-gray-400 font-medium mt-1">Manage all your agent mode budget plans</p>
                             </div>
                         </div>
                         <button
-                            onClick={handleAddTrip}
+                            onClick={() => router.push('/bulk_calculation')}
                             className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10B17D] text-white rounded-xl text-sm font-bold hover:bg-[#0D8F65] hover:shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
                         >
                             <Plus size={18} />
-                            <span>New Trip</span>
+                            <span>New Calculation</span>
                         </button>
                     </header>
 
-                    {trips.filter(t => t.type !== 'bulk').length === 0 ? (
+                    {bulkTrips.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-[50vh] text-center bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-                            <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200 mb-6">
-                                <MapIcon size={32} className="md:size-[40px]" />
+                            <div className="w-16 h-16 md:w-20 md:h-20 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 mb-6">
+                                <ShieldCheck size={32} className="md:size-[40px]" />
                             </div>
-                            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">No trips found</h3>
-                            <button onClick={handleAddTrip} className="cursor-pointer flex items-center gap-2 px-8 py-3 bg-[#10B17D] text-white rounded-xl font-bold hover:bg-[#0D8F65] transition-all">
-                                <Plus size={20} /> Create Your First Trip
+                            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">No calculations found</h3>
+                            <button onClick={() => router.push('/bulk_calculation')} className="cursor-pointer flex items-center gap-2 px-8 py-3 bg-[#10B17D] text-white rounded-xl font-bold hover:bg-[#0D8F65] transition-all">
+                                <Plus size={20} /> Create Your First Calculation
                             </button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {trips.filter(t => t.type !== 'bulk').map(trip => (
-                                <TripCard key={trip.id} trip={trip} onEdit={handleEditTrip} onDelete={handleDeleteTrip} router={router} formatDate={formatDate} />
+                            {bulkTrips.map(trip => (
+                                <TripCard
+                                    key={trip.id}
+                                    trip={trip}
+                                    onEdit={handleEditTrip}
+                                    onDelete={handleDeleteTrip}
+                                    router={router}
+                                    formatDate={formatDate}
+                                />
                             ))}
                         </div>
                     )}

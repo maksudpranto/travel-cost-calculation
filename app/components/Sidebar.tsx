@@ -1,10 +1,11 @@
 "use client";
 
 import React from 'react';
-import { Map as MapIcon, LayoutDashboard, Calculator, Settings, LogOut, X, User as UserIcon, Moon, Sun, Edit2, Trash2 } from 'lucide-react';
+import { Map as MapIcon, LayoutDashboard, Calculator, Settings, LogOut, X, User as UserIcon, Moon, Sun, Edit2, Trash2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Trip } from '../type';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAgentMode } from '../context/AgentModeContext';
 
 interface SidebarProps {
   trips: Trip[];
@@ -39,13 +40,17 @@ export const Sidebar = ({
   onLogout
 }: SidebarProps) => {
   const pathname = usePathname();
+  const { isAgentMode, toggleAgentMode } = useAgentMode();
 
   const isActive = (path: string) => pathname === path;
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: MapIcon, label: 'Trips', path: '/trips' },
-    { icon: Calculator, label: 'Calculator', path: '/bulk_calculation' },
+    ...(isAgentMode ? [
+      { icon: ShieldCheck, label: 'Calculations', path: '/calculations' },
+      { icon: Calculator, label: 'Calculator', path: '/bulk_calculation' }
+    ] : []),
   ];
 
   return (
@@ -104,12 +109,13 @@ export const Sidebar = ({
               </div>
             </div>
 
-            {/* Quick Trip Selector (Only show if on dashboard) */}
-            {pathname === '/dashboard' && trips.length > 0 && (
+
+            {/* Quick Trip Selector (Regular Trips) */}
+            {(pathname === '/dashboard' || pathname === '/trips' || pathname === '/bulk_calculation') && trips.filter(t => t.type !== 'bulk').length > 0 && (
               <div>
-                <p className="px-4 text-[10px] font-bold text-gray-500/70 uppercase tracking-widest mb-4">Quick Switch</p>
+                <p className="px-4 text-[10px] font-bold text-gray-500/70 uppercase tracking-widest mb-4">Your Journeys</p>
                 <div className="space-y-1">
-                  {trips.map((trip) => {
+                  {trips.filter(t => t.type !== 'bulk').map((trip) => {
                     const active = activeTripId === trip.id;
                     return (
                       <div
@@ -129,13 +135,13 @@ export const Sidebar = ({
 
                         <div className={`flex items-center gap-1 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
                           <button
-                            onClick={(e) => { e.stopPropagation(); onEditTrip(trip); }}
+                            onClick={(e) => { e.stopPropagation(); onEditTrip(trip); onClose(); }}
                             className="p-1 hover:bg-white/10 rounded-md text-gray-500 hover:text-white transition-colors cursor-pointer"
                           >
                             <Edit2 size={12} />
                           </button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); }}
+                            onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); onClose(); }}
                             className="p-1 hover:bg-white/10 rounded-md text-gray-500 hover:text-rose-400 transition-colors cursor-pointer"
                           >
                             <Trash2 size={12} />
@@ -151,6 +157,41 @@ export const Sidebar = ({
 
           {/* User Profile */}
           <div className="p-4 border-t border-white/5 bg-black/20 backdrop-blur-xl">
+            {/* Agent Mode Toggle */}
+            <div className="mb-4 px-2">
+              <button
+                onClick={toggleAgentMode}
+                className={`
+                  w-full flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 group
+                  ${isAgentMode
+                    ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/20 text-emerald-400 shadow-lg shadow-emerald-900/10'
+                    : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/10 hover:bg-white/10'}
+                `}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`
+                    p-2 rounded-xl transition-colors duration-300
+                    ${isAgentMode ? 'bg-emerald-500 text-white' : 'bg-gray-800 text-gray-500 group-hover:bg-gray-700'}
+                  `}>
+                    {isAgentMode ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
+                  </div>
+                  <div className="text-left">
+                    <p className={`text-xs font-black tracking-tight ${isAgentMode ? 'text-white' : 'text-gray-400'}`}>Agent Mode</p>
+                    <p className="text-[10px] font-bold opacity-50">{isAgentMode ? 'Access unlocked' : 'Restricted access'}</p>
+                  </div>
+                </div>
+                <div className={`
+                  w-10 h-6 rounded-full relative transition-colors duration-300
+                  ${isAgentMode ? 'bg-emerald-500' : 'bg-gray-700'}
+                `}>
+                  <div className={`
+                    absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300
+                    ${isAgentMode ? 'left-5' : 'left-1'}
+                  `} />
+                </div>
+              </button>
+            </div>
+
             <div className="bg-white/5 border border-white/10 rounded-3xl p-4 flex items-center justify-between group hover:bg-white/10 transition-all duration-300">
               <div className="flex items-center gap-3">
                 <div className="relative">

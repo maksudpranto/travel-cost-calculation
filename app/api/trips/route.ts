@@ -37,7 +37,7 @@ export async function POST(req: Request) {
         }
 
         const data = await req.json();
-        const { id, name, currency, startDate, endDate, people, expenses } = data;
+        const { id, name, currency, startDate, endDate, people, expenses, type, touristCount, feePerPerson } = data;
 
         if (!name) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -48,11 +48,14 @@ export async function POST(req: Request) {
 
         const newTrip = {
             userId: session.user.id,
-            id: id || Date.now(), // Use provided ID (e.g. from frontend generation) or generate one
+            id: id || Date.now(),
             name,
             currency: currency || "BDT",
             startDate,
             endDate,
+            type: type || "regular",
+            touristCount,
+            feePerPerson,
             people: people || [],
             expenses: expenses || [],
             createdAt: new Date(),
@@ -60,6 +63,7 @@ export async function POST(req: Request) {
         };
 
         const result = await db.collection("trips").insertOne(newTrip);
+        console.log("Trip created:", newTrip.name, "Type:", newTrip.type);
 
         return NextResponse.json({ ...newTrip, _id: result.insertedId }, { status: 201 });
     } catch (error) {

@@ -167,7 +167,7 @@ function DashboardContent() {
     if (modalType === 'trip') {
       if (editingItem) {
         // Update Trip Logic
-        const updatedTrip = { ...activeTrip, name: data.name, startDate: data.startDate, endDate: data.endDate };
+        const updatedTrip = { ...editingItem, name: data.name, startDate: data.startDate, endDate: data.endDate };
         // Optimistic Update
         const updatedTrips = trips.map(t => t.id === editingItem.id ? updatedTrip : t);
         setTrips(updatedTrips);
@@ -294,7 +294,14 @@ function DashboardContent() {
       <Sidebar
         trips={trips}
         activeTripId={activeTripId}
-        onSelectTrip={setActiveTripId}
+        onSelectTrip={(id) => {
+          const trip = trips.find(t => t.id === id);
+          if (trip?.type === 'bulk') {
+            router.push(`/bulk_calculation?tripId=${id}`);
+          } else {
+            setActiveTripId(id);
+          }
+        }}
         onEditTrip={(trip: Trip) => handleEditItem('trip', trip)}
         onDeleteTrip={(trip: Trip) => handleDeleteItem('trip', trip.id)}
         isOpen={sidebarOpen}

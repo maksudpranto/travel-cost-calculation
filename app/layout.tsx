@@ -1,6 +1,6 @@
 // File: app/layout.tsx
 import './globals.css';
-
+import { AgentModeProvider } from './context/AgentModeContext';
 
 export const metadata = {
   title: 'Trip Cost Manager',
@@ -15,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased" suppressHydrationWarning={true}>
-        {children}
+        <AgentModeProvider>
+          {children}
+        </AgentModeProvider>
       </body>
     </html>
   );
