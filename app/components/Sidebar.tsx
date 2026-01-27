@@ -48,8 +48,8 @@ export const Sidebar = ({
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: MapIcon, label: 'Trips', path: '/trips' },
     ...(isAgentMode ? [
-      { icon: Calculator, label: 'Calculator', path: '/bulk_calculation' },
-      { icon: ShieldCheck, label: 'Calculations', path: '/calculations' }
+      { icon: Calculator, label: 'New Bulk Tour', path: '/bulk_calculation' },
+      { icon: ShieldCheck, label: 'Bulk Tours', path: '/calculations' }
     ] : []),
   ];
 
@@ -151,7 +151,7 @@ export const Sidebar = ({
                         </div>
                       )}
                       {/* Bulk Calculations Sub-items */}
-                      {item.label === 'Calculations' && trips.filter(t => t.type === 'bulk').length > 0 && (
+                      {item.label === 'Bulk Tours' && trips.filter(t => t.type === 'bulk').length > 0 && (
                         <div className="ml-9 mt-2 mb-4 space-y-1">
                           {trips.filter(t => t.type === 'bulk').map((trip) => {
                             const isTripActive = activeTripId === trip.id;
