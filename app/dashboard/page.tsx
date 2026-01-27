@@ -321,7 +321,7 @@ function DashboardContent() {
         }}
       />
 
-      <main className="md:ml-72 flex-1 min-w-0">
+      <main className="md:ml-80 flex-1 min-w-0">
         <div className="max-w-[1600px] mx-auto p-4 md:p-10 space-y-10">
 
           {/* Header */}

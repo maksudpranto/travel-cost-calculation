@@ -48,8 +48,8 @@ export const Sidebar = ({
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: MapIcon, label: 'Trips', path: '/trips' },
     ...(isAgentMode ? [
-      { icon: ShieldCheck, label: 'Calculations', path: '/calculations' },
-      { icon: Calculator, label: 'Calculator', path: '/bulk_calculation' }
+      { icon: Calculator, label: 'Calculator', path: '/bulk_calculation' },
+      { icon: ShieldCheck, label: 'Calculations', path: '/calculations' }
     ] : []),
   ];
 
@@ -66,7 +66,7 @@ export const Sidebar = ({
 
       {/* Sidebar */}
       <aside className={`
-        fixed left-0 top-0 h-full w-72 bg-gradient-to-b from-[#0D3D32] to-[#08241E] border-r border-white/5 z-50
+        fixed left-0 top-0 h-full w-80 bg-gradient-to-b from-[#0D3D32] to-[#08241E] border-r border-white/5 z-50
         transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
@@ -90,69 +90,110 @@ export const Sidebar = ({
             <div>
               <p className="px-4 text-[10px] font-bold text-gray-500/70 uppercase tracking-widest mb-4">Main Menu</p>
               <div className="space-y-1">
-                {navItems.map((item) => {
+                {navItems.map((item, index) => {
                   const active = isActive(item.path);
+                  const isAgentItem = index >= 2;
                   return (
-                    <Link key={item.label} href={item.path} onClick={onClose}>
-                      <div className={`
-                        flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200 group
-                        ${active
-                          ? 'bg-gradient-to-r from-[#10B17D] to-[#0D8F65] text-white'
-                          : 'text-gray-400 hover:bg-white/5 hover:text-white'}
-                      `}>
-                        <item.icon size={20} className={active ? 'text-white' : 'text-gray-500 group-hover:text-white'} />
-                        <span className="font-bold text-sm">{item.label}</span>
-                      </div>
-                    </Link>
+                    <React.Fragment key={item.label}>
+                      {isAgentMode && index === 2 && (
+                        <div className="py-4 px-4 flex items-center gap-3">
+                          <div className="h-[1px] flex-1 bg-white/5" />
+                          <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Agent Tools</span>
+                          <div className="h-[1px] flex-1 bg-white/5" />
+                        </div>
+                      )}
+                      <Link href={item.path} onClick={onClose}>
+                        <div className={`
+                          flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200 group
+                          ${active
+                            ? 'bg-gradient-to-r from-[#10B17D] to-[#0D8F65] text-white'
+                            : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+                        `}>
+                          <item.icon size={20} className={active ? 'text-white' : 'text-gray-500 group-hover:text-white'} />
+                          <span className="font-bold text-sm">{item.label}</span>
+                        </div>
+                      </Link>
+
+                      {/* Trips Sub-items (Your Journeys) */}
+                      {item.label === 'Trips' && trips.filter(t => t.type !== 'bulk').length > 0 && (
+                        <div className="ml-9 mt-2 mb-4 space-y-1">
+                          {trips.filter(t => t.type !== 'bulk').map((trip) => {
+                            const isTripActive = activeTripId === trip.id;
+                            return (
+                              <div
+                                key={trip.id}
+                                className={`
+                                  group flex items-center justify-between px-4 py-2 rounded-xl cursor-pointer transition-all duration-200
+                                  ${isTripActive
+                                    ? 'text-[#10B17D] bg-white/5'
+                                    : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'}
+                                `}
+                                onClick={() => { onSelectTrip(trip.id); onClose(); }}
+                              >
+                                <span className="truncate font-bold text-[13px]">{trip.name}</span>
+                                <div className={`flex items-center gap-1 ${isTripActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); onEditTrip(trip); onClose(); }}
+                                    className="p-1 hover:bg-white/10 rounded-md text-gray-600 hover:text-white transition-colors cursor-pointer"
+                                  >
+                                    <Edit2 size={10} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); onClose(); }}
+                                    className="p-1 hover:bg-white/10 rounded-md text-gray-600 hover:text-rose-400 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {/* Bulk Calculations Sub-items */}
+                      {item.label === 'Calculations' && trips.filter(t => t.type === 'bulk').length > 0 && (
+                        <div className="ml-9 mt-2 mb-4 space-y-1">
+                          {trips.filter(t => t.type === 'bulk').map((trip) => {
+                            const isTripActive = activeTripId === trip.id;
+                            return (
+                              <div
+                                key={trip.id}
+                                className={`
+                                  group flex items-center justify-between px-4 py-2 rounded-xl cursor-pointer transition-all duration-200
+                                  ${isTripActive
+                                    ? 'text-[#10B17D] bg-white/5'
+                                    : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'}
+                                `}
+                                onClick={() => { onSelectTrip(trip.id); onClose(); }}
+                              >
+                                <span className="truncate font-bold text-[13px]">{trip.name}</span>
+                                <div className={`flex items-center gap-1 ${isTripActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); onEditTrip(trip); onClose(); }}
+                                    className="p-1 hover:bg-white/10 rounded-md text-gray-600 hover:text-white transition-colors cursor-pointer"
+                                  >
+                                    <Edit2 size={10} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); onClose(); }}
+                                    className="p-1 hover:bg-white/10 rounded-md text-gray-600 hover:text-rose-400 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </div>
             </div>
 
 
-            {/* Quick Trip Selector (Regular Trips) */}
-            {(pathname === '/dashboard' || pathname === '/trips' || pathname === '/bulk_calculation') && trips.filter(t => t.type !== 'bulk').length > 0 && (
-              <div>
-                <p className="px-4 text-[10px] font-bold text-gray-500/70 uppercase tracking-widest mb-4">Your Journeys</p>
-                <div className="space-y-1">
-                  {trips.filter(t => t.type !== 'bulk').map((trip) => {
-                    const active = activeTripId === trip.id;
-                    return (
-                      <div
-                        key={trip.id}
-                        className={`
-                          group flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200
-                          ${active
-                            ? 'bg-white/10 text-[#10B17D]'
-                            : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}
-                        `}
-                        onClick={() => { onSelectTrip(trip.id); onClose(); }}
-                      >
-                        <div className="flex items-center gap-3 truncate flex-1">
-                          <div className={`w-2 h-2 rounded-full ${active ? 'bg-[#10B17D]' : 'bg-white/10'}`}></div>
-                          <span className="truncate font-medium text-sm">{trip.name}</span>
-                        </div>
 
-                        <div className={`flex items-center gap-1 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onEditTrip(trip); onClose(); }}
-                            className="p-1 hover:bg-white/10 rounded-md text-gray-500 hover:text-white transition-colors cursor-pointer"
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); onClose(); }}
-                            className="p-1 hover:bg-white/10 rounded-md text-gray-500 hover:text-rose-400 transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* User Profile */}

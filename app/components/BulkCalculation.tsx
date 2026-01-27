@@ -374,7 +374,7 @@ export default function BulkCalculation() {
         onLogout={handleLogout}
       />
 
-      <main className="md:ml-72 flex-1 min-w-0">
+      <main className="md:ml-80 flex-1 min-w-0">
         {!isAgentMode ? (
           <div className="min-h-screen flex items-center justify-center p-4 relative">
             {/* Mobile Menu Button */}

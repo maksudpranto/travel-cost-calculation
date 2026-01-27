@@ -134,7 +134,7 @@ export default function TripsPage() {
                 onLogout={() => authClient.signOut({ fetchOptions: { onSuccess: () => router.push("/") } })}
             />
 
-            <main className="md:ml-72 flex-1 min-w-0">
+            <main className="md:ml-80 flex-1 min-w-0">
                 <div className="max-w-[1400px] mx-auto p-4 sm:p-8 md:p-12 space-y-12">
 
                     {/* Header Section */}

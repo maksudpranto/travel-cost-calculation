@@ -116,7 +116,7 @@ export default function CalculationsPage() {
                 onLogout={() => authClient.signOut({ fetchOptions: { onSuccess: () => router.push("/") } })}
             />
 
-            <main className="md:ml-72 flex-1 min-w-0">
+            <main className="md:ml-80 flex-1 min-w-0">
                 <div className="max-w-[1400px] mx-auto p-4 sm:p-6 md:p-10 space-y-8 md:space-y-10">
 
                     <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pb-6 border-b border-gray-100">
