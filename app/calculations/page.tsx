@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Menu, LayoutDashboard, ShieldCheck, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Plus, Menu, LayoutDashboard, ShieldCheck, ChevronRight, Edit2, Trash2, TrendingUp, TrendingDown, ArrowRight, Clock, Lock } from "lucide-react";
 import { Sidebar } from '../components/Sidebar';
 import { AddModal, DeleteConfirmModal } from '../components/Modals';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Trip } from '../type';
-import { TripCard } from '../components/TripCard';
+import { TripListItem } from '../components/TripListItem';
 
 export default function CalculationsPage() {
     const { data: session } = authClient.useSession();
@@ -17,7 +18,7 @@ export default function CalculationsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<'trip' | 'profile'>('trip');
+    const [modalType, setModalType] = useState<'trip' | 'profile' | 'bulk_trip'>('trip');
     const [editingItem, setEditingItem] = useState<any>(null);
     const [itemToDelete, setItemToDelete] = useState<{ type: 'trip', id: number } | null>(null);
 
@@ -41,9 +42,10 @@ export default function CalculationsPage() {
         else if (!isLoading) setIsLoading(false);
     }, [session]);
 
+
     const handleEditTrip = (trip: Trip) => {
         setEditingItem(trip);
-        setModalType('trip');
+        setModalType(trip.type === 'bulk' ? 'bulk_trip' : 'trip');
         setModalOpen(true);
     };
 
@@ -65,13 +67,42 @@ export default function CalculationsPage() {
             return;
         }
 
+        if (modalType === 'bulk_trip') {
+            try {
+                const res = await fetch("/api/trips", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: data.name,
+                        type: 'bulk',
+                        touristCount: data.touristCount,
+                        feePerPerson: data.feePerPerson,
+                        startDate: data.startDate,
+                        endDate: data.endDate,
+                        status: 'active',
+                        expenses: []
+                    }),
+                });
+
+                if (res.ok) {
+                    const newTrip = await res.json();
+                    router.push(`/bulk_calculation?tripId=${newTrip.id}`);
+                }
+            } catch (error) {
+                console.error("Failed to create bulk tour", error);
+            }
+            setModalOpen(false);
+            return;
+        }
+
         if (editingItem) {
-            const updatedTrip = { ...editingItem, name: data.name };
+            const updatedTrip = { ...editingItem, name: data.name, startDate: data.startDate, endDate: data.endDate };
+            const payload = modalType === 'trip' ? { name: data.name, startDate: data.startDate, endDate: data.endDate } : data;
             setTrips(trips.map(t => t.id === editingItem.id ? updatedTrip : t));
             await fetch(`/api/trips/${editingItem.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: data.name })
+                body: JSON.stringify(payload)
             });
         }
         setModalOpen(false);
@@ -84,6 +115,7 @@ export default function CalculationsPage() {
     };
 
     const bulkTrips = trips.filter(t => t.type === 'bulk');
+
 
     if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
 
@@ -133,7 +165,11 @@ export default function CalculationsPage() {
                             </div>
                         </div>
                         <button
-                            onClick={() => router.push('/bulk_calculation')}
+                            onClick={() => {
+                                setEditingItem(null);
+                                setModalType('bulk_trip');
+                                setModalOpen(true);
+                            }}
                             className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10B17D] text-white rounded-xl text-sm font-bold hover:bg-[#0D8F65] hover:shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
                         >
                             <Plus size={18} />
@@ -147,22 +183,84 @@ export default function CalculationsPage() {
                                 <ShieldCheck size={32} className="md:size-[40px]" />
                             </div>
                             <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">No calculations found</h3>
-                            <button onClick={() => router.push('/bulk_calculation')} className="cursor-pointer flex items-center gap-2 px-8 py-3 bg-[#10B17D] text-white rounded-xl font-bold hover:bg-[#0D8F65] transition-all">
+                            <button
+                                onClick={() => {
+                                    setEditingItem(null);
+                                    setModalType('bulk_trip');
+                                    setModalOpen(true);
+                                }}
+                                className="cursor-pointer flex items-center gap-2 px-8 py-3 bg-[#10B17D] text-white rounded-xl font-bold hover:bg-[#0D8F65] transition-all"
+                            >
                                 <Plus size={20} /> Create Your First Calculation
                             </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {bulkTrips.map(trip => (
-                                <TripCard
-                                    key={trip.id}
-                                    trip={trip}
-                                    onEdit={handleEditTrip}
-                                    onDelete={handleDeleteTrip}
-                                    router={router}
-                                    formatDate={formatDate}
-                                />
-                            ))}
+                        <div className="bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="border-b border-gray-50">
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tour Name</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tour Date</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tourists</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Spend</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Profit</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {bulkTrips.map((tour) => {
+                                            const tourSpend = tour.expenses.reduce((sum, e) => sum + e.amount, 0);
+                                            const tourCollection = (tour.touristCount || 0) * (tour.feePerPerson || 0);
+                                            const tourProfit = tourCollection - tourSpend;
+
+                                            return (
+                                                <tr key={tour.id} className="group hover:bg-gray-50/50 transition-colors">
+                                                    <td className="py-5">
+                                                        <div className="flex items-center gap-2">
+                                                            {tour.status === 'completed' && <Lock size={14} className="text-amber-500 shrink-0" />}
+                                                            <span className="font-bold text-gray-900">{tour.name}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap">
+                                                        {formatDate(tour.startDate || '')} — {formatDate(tour.endDate || '')}
+                                                    </td>
+                                                    <td className="py-5 text-gray-600 font-medium text-center">{tour.touristCount || 0}</td>
+                                                    <td className="py-5 text-gray-600 font-bold text-right">৳{tourSpend.toLocaleString()}</td>
+                                                    <td className={`py-5 font-black text-right ${tourProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            {tourProfit >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                                            ৳{tourProfit.toLocaleString()}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-5 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleEditTrip(tour); }}
+                                                                className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDeleteTrip(tour.id); }}
+                                                                className="p-2 text-gray-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                            <Link
+                                                                href={`/bulk_calculation?tripId=${tour.id}`}
+                                                                className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                            >
+                                                                <ArrowRight size={18} />
+                                                            </Link>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
 

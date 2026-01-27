@@ -4,9 +4,9 @@ import { Person } from '../type';
 
 interface PeopleCardProps {
   people: Person[];
-  onAdd: () => void;
-  onEdit: (person: Person) => void;
-  onDelete: (id: number) => void;
+  onAdd?: () => void;
+  onEdit?: (person: Person) => void;
+  onDelete?: (id: number) => void;
 }
 
 const scrollbarStyle = `
@@ -18,16 +18,18 @@ const scrollbarStyle = `
 
 export const PeopleCard = ({ people, onAdd, onEdit, onDelete }: PeopleCardProps) => {
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 w-full">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100/50 w-full">
       <style>{scrollbarStyle}</style>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-bold text-gray-800">People</h3>
-        <button
-          onClick={onAdd}
-          className="cursor-pointer flex items-center gap-2 text-sm font-bold bg-[#10B17D] text-white hover:bg-[#0D8F65] px-6 py-2.5 rounded-xl shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
-        >
-          <Plus size={16} /> Add
-        </button>
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            className="cursor-pointer flex items-center gap-2 text-sm font-bold bg-[#10B17D] text-white hover:bg-[#0D8F65] px-6 py-2.5 rounded-xl shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
+          >
+            <Plus size={16} /> Add
+          </button>
+        )}
       </div>
 
       <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
@@ -51,8 +53,8 @@ export const PeopleCard = ({ people, onAdd, onEdit, onDelete }: PeopleCardProps)
                   ৳{person.deposit.toLocaleString()}
                 </div>
                 <div className="flex gap-1">
-                  <button onClick={() => onEdit(person)} className="cursor-pointer text-gray-300 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 hover:shadow-md active:scale-90 transition-all"><Pencil size={16} /></button>
-                  <button onClick={() => onDelete(person.id)} className="cursor-pointer text-gray-300 hover:text-red-600 p-2 rounded-md hover:bg-red-50 hover:shadow-md active:scale-90 transition-all"><Trash2 size={16} /></button>
+                  {onEdit && <button onClick={() => onEdit(person)} className="cursor-pointer text-gray-300 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 hover:shadow-md active:scale-90 transition-all"><Pencil size={16} /></button>}
+                  {onDelete && <button onClick={() => onDelete(person.id)} className="cursor-pointer text-gray-300 hover:text-red-600 p-2 rounded-md hover:bg-red-50 hover:shadow-md active:scale-90 transition-all"><Trash2 size={16} /></button>}
                 </div>
               </div>
             </div>

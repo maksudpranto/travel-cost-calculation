@@ -28,14 +28,14 @@ const StatItem = ({
   color: string;
 }) => {
   const colorMap: Record<string, string> = {
-    blue: 'from-blue-500 to-blue-600 shadow-blue-200',
-    rose: 'from-rose-500 to-rose-600 shadow-rose-200',
-    emerald: 'from-emerald-500 to-emerald-600 shadow-emerald-200',
-    purple: 'from-purple-500 to-indigo-600 shadow-indigo-200',
+    blue: 'from-blue-500 to-blue-600',
+    rose: 'from-rose-500 to-rose-600',
+    emerald: 'from-emerald-500 to-emerald-600',
+    purple: 'from-purple-500 to-indigo-600',
   };
 
   return (
-    <div className={`bg-gradient-to-br ${colorMap[color] || 'from-gray-500 to-gray-600'} p-4 sm:p-6 rounded-2xl shadow-lg hover:scale-[1.02] transition-all duration-300 group text-white border border-white/10`}>
+    <div className={`bg-gradient-to-br ${colorMap[color] || 'from-gray-500 to-gray-600'} p-4 sm:p-6 rounded-2xl hover:scale-[1.02] transition-all duration-300 group text-white border border-white/10`}>
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="p-2 sm:p-2.5 rounded-xl bg-white/20 backdrop-blur-md border border-white/20">
           <Icon size={18} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />

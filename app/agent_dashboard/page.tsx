@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 import { Sidebar } from '../components/Sidebar';
 import { Trip } from '../type';
 import { useAgentMode } from '../context/AgentModeContext';
-import { AddModal } from '../components/Modals';
+import { AddModal, DeleteConfirmModal } from '../components/Modals';
 import Link from 'next/link';
 
 export default function AgentDashboard() {
@@ -33,6 +33,8 @@ export default function AgentDashboard() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<Trip | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<Trip | null>(null);
 
     // Fetch all trips to filter bulk ones
     const fetchTrips = async () => {
@@ -94,28 +96,68 @@ export default function AgentDashboard() {
         });
     };
 
-    const handleCreateBulkTour = async (data: { name: string, touristCount: number, feePerPerson: number }) => {
-        try {
-            const res = await fetch("/api/trips", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name: data.name,
-                    type: 'bulk',
-                    touristCount: data.touristCount,
-                    feePerPerson: data.feePerPerson,
-                    status: 'active',
-                    expenses: []
-                }),
-            });
+    const handleEditTrip = (trip: Trip) => {
+        setEditingItem(trip);
+        setIsModalOpen(true);
+    };
 
-            if (res.ok) {
-                const newTrip = await res.json();
-                router.push(`/bulk_calculation?tripId=${newTrip.id}`);
+    const handleDeleteTrip = (trip: Trip) => {
+        setItemToDelete(trip);
+    };
+
+    const confirmDelete = async () => {
+        if (!itemToDelete) return;
+        setTrips(trips.filter(t => t.id !== itemToDelete.id));
+        await fetch(`/api/trips/${itemToDelete.id}`, { method: 'DELETE' });
+        setItemToDelete(null);
+    };
+
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return 'N/A';
+        return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const handleCreateBulkTour = async (data: { name: string, touristCount: number, feePerPerson: number, startDate?: string, endDate?: string }) => {
+        try {
+            if (editingItem) {
+                const res = await fetch(`/api/trips/${editingItem.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: data.name,
+                        startDate: data.startDate,
+                        endDate: data.endDate
+                    }),
+                });
+                if (res.ok) {
+                    fetchTrips();
+                }
+            } else {
+                const res = await fetch("/api/trips", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: data.name,
+                        type: 'bulk',
+                        touristCount: data.touristCount,
+                        feePerPerson: data.feePerPerson,
+                        startDate: data.startDate,
+                        endDate: data.endDate,
+                        status: 'active',
+                        expenses: []
+                    }),
+                });
+
+                if (res.ok) {
+                    const newTrip = await res.json();
+                    router.push(`/bulk_calculation?tripId=${newTrip.id}`);
+                }
             }
         } catch (error) {
-            console.error("Failed to create bulk tour", error);
+            console.error("Failed to save bulk tour", error);
         }
+        setIsModalOpen(false);
+        setEditingItem(null);
     };
 
     const StatCard = ({ label, value, icon: Icon, color, subValue }: { label: string; value: string; icon: any; color: 'blue' | 'rose' | 'emerald' | 'purple', subValue?: string }) => {
@@ -198,8 +240,8 @@ export default function AgentDashboard() {
                         router.push(`/dashboard?tripId=${id}`);
                     }
                 }}
-                onEditTrip={() => { }}
-                onDeleteTrip={() => { }}
+                onEditTrip={handleEditTrip}
+                onDeleteTrip={handleDeleteTrip}
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
                 user={session?.user}
@@ -289,6 +331,7 @@ export default function AgentDashboard() {
                                 <thead>
                                     <tr className="border-b border-gray-50">
                                         <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tour Name</th>
+                                        <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tour Date</th>
                                         <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Tourists</th>
                                         <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Spend</th>
                                         <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Profit</th>
@@ -304,6 +347,9 @@ export default function AgentDashboard() {
                                         return (
                                             <tr key={tour.id} className="group hover:bg-gray-50/50 transition-colors">
                                                 <td className="py-5 font-bold text-gray-900">{tour.name}</td>
+                                                <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap">
+                                                    {formatDate(tour.startDate || '')} — {formatDate(tour.endDate || '')}
+                                                </td>
                                                 <td className="py-5 text-gray-600 font-medium text-center">{tour.touristCount || 0}</td>
                                                 <td className="py-5 text-gray-600 font-bold text-right">৳{tourSpend.toLocaleString()}</td>
                                                 <td className={`py-5 font-black text-right ${tourProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -325,12 +371,15 @@ export default function AgentDashboard() {
                                     })}
                                     {bulkTours.length === 0 && (
                                         <tr>
-                                            <td colSpan={5} className="py-20 text-center">
+                                            <td colSpan={6} className="py-20 text-center">
                                                 <div className="flex flex-col items-center gap-4">
                                                     <div className="p-4 bg-gray-50 rounded-2xl text-gray-200">
                                                         <Calculator size={40} />
                                                     </div>
-                                                    <p className="text-gray-400 font-medium">No bulk tours found. Start by creating a new calculation.</p>
+                                                    <div className="space-y-1">
+                                                        <p className="text-xl font-black text-gray-900">No Ongoing Trips Found</p>
+                                                        <p className="text-gray-400 font-medium max-w-[280px]">Start by creating a new calculation to track your agency's next big tour.</p>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -344,9 +393,18 @@ export default function AgentDashboard() {
 
             <AddModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                type="bulk_trip"
+                onClose={() => { setIsModalOpen(false); setEditingItem(null); }}
+                type={editingItem ? (editingItem.type === 'bulk' ? 'bulk_trip' : 'trip') : 'bulk_trip'}
                 onSave={handleCreateBulkTour}
+                initialData={editingItem}
+            />
+
+            <DeleteConfirmModal
+                isOpen={!!itemToDelete}
+                onClose={() => setItemToDelete(null)}
+                onConfirm={confirmDelete}
+                title="Delete Calculation?"
+                message="This will permanently remove this saved calculation."
             />
         </div>
     );

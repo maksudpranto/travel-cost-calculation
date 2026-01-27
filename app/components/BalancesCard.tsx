@@ -16,7 +16,7 @@ const scrollbarStyle = `
 
 export const BalancesCard = ({ people, avgCost }: BalancesCardProps) => {
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 w-full">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100/50 w-full">
       <style>{scrollbarStyle}</style>
       <h3 className="text-lg font-bold text-gray-800 mb-6">Settlement</h3>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
-import { Plus, Download, Menu, Map as MapIcon, ArrowUp, Calendar } from "lucide-react";
+import { Plus, Download, Menu, Map as MapIcon, ArrowUp, Calendar, Lock, Unlock } from "lucide-react";
 import { authClient } from '@/lib/auth-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -34,7 +34,8 @@ function DashboardContent() {
   // --- APP STATE ---
   const [trips, setTrips] = useState<Trip[]>([]);
   const [activeTripId, setActiveTripId] = useState<number>(0);
-  const activeTrip = trips.find(t => t.id === activeTripId) || trips[0];
+  const ongoingTrips = useMemo(() => trips.filter(t => t.type !== 'bulk' && t.status !== 'completed'), [trips]);
+  const activeTrip = trips.find(t => t.id === activeTripId) || ongoingTrips[0];
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,11 +51,12 @@ function DashboardContent() {
         const data = await res.json();
         setTrips(data);
         setIsLoaded(true);
+        const ongoing = data.filter((t: any) => t.type !== 'bulk' && t.status !== 'completed');
         if (data.length > 0) {
           if (tripIdParam) {
             setActiveTripId(Number(tripIdParam));
-          } else if (activeTripId === 0) {
-            setActiveTripId(data[0].id);
+          } else if (activeTripId === 0 && ongoing.length > 0) {
+            setActiveTripId(ongoing[0].id);
           }
         }
       }
@@ -85,7 +87,7 @@ function DashboardContent() {
 
   // --- UI STATES ---
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip' | 'profile'>('expense');
+  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip' | 'profile' | 'bulk_trip'>('expense');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip', id: number } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -135,11 +137,43 @@ function DashboardContent() {
 
   // --- HANDLERS ---
   const handleAddClick = (type: 'person' | 'expense' | 'trip' | 'profile') => { setEditingItem(null); setModalType(type); setModalOpen(true); };
-  const handleEditItem = (type: 'person' | 'expense' | 'trip', item: any) => { setEditingItem(item); setModalType(type); setModalOpen(true); };
+  const handleEditItem = (type: 'person' | 'expense' | 'trip', item: any) => {
+    setEditingItem(item);
+    const finalType = (type === 'trip' && item.type === 'bulk') ? 'bulk_trip' : type;
+    setModalType(finalType as any);
+    setModalOpen(true);
+  };
   const handleDeleteItem = (type: 'person' | 'expense' | 'trip', id: number) => { setItemToDelete({ type, id }); };
 
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleToggleStatus = async () => {
+    if (!activeTrip) return;
+    const newStatus: 'active' | 'completed' = activeTrip.status === 'completed' ? 'active' : 'completed';
+    const updatedTrip = { ...activeTrip, status: newStatus };
+
+    // Optimistic Update
+    setTrips(trips.map(t => t.id === activeTripId ? updatedTrip : t));
+
+    // API Update
+    const res = await fetch(`/api/trips/${activeTrip.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedTrip)
+    });
+
+    if (res.ok && newStatus === 'completed') {
+      const remainingOngoing = trips.filter(t => t.id !== activeTrip.id && t.type !== 'bulk' && t.status !== 'completed');
+      if (remainingOngoing.length === 0) {
+        setActiveTripId(0);
+        router.push('/dashboard');
+      } else {
+        setActiveTripId(remainingOngoing[0].id);
+        router.push(`/dashboard?tripId=${remainingOngoing[0].id}`);
+      }
+    }
   };
 
   const handleExport = () => {
@@ -346,6 +380,16 @@ function DashboardContent() {
             <div className="flex items-center gap-3 w-full sm:w-auto">
               {activeTrip && (
                 <>
+                  <button
+                    onClick={handleToggleStatus}
+                    className={`cursor-pointer flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${activeTrip.status === 'completed'
+                      ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20'
+                      : 'bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100'
+                      }`}
+                  >
+                    {activeTrip.status === 'completed' ? <Unlock size={18} /> : <Lock size={18} />}
+                    <span>{activeTrip.status === 'completed' ? 'Resume Trip' : 'End Trip'}</span>
+                  </button>
                   <button onClick={handleExport} className="cursor-pointer flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:shadow-sm transition-all active:scale-95">
                     <Download size={18} />
                     <span>Export</span>
@@ -372,15 +416,15 @@ function DashboardContent() {
                 <div className="xl:col-span-2 space-y-8">
                   <PeopleCard
                     people={activeTrip.people}
-                    onAdd={() => handleAddClick('person')}
-                    onEdit={(p) => handleEditItem('person', p)}
-                    onDelete={(id) => handleDeleteItem('person', id)}
+                    onAdd={activeTrip.status === 'completed' ? undefined : () => handleAddClick('person')}
+                    onEdit={activeTrip.status === 'completed' ? undefined : (p) => handleEditItem('person', p)}
+                    onDelete={activeTrip.status === 'completed' ? undefined : (id) => handleDeleteItem('person', id)}
                   />
                   <ExpensesCard
                     expenses={activeTrip.expenses}
-                    onAdd={() => handleAddClick('expense')}
-                    onEdit={(e) => handleEditItem('expense', e)}
-                    onDelete={(id) => handleDeleteItem('expense', id)}
+                    onAdd={activeTrip.status === 'completed' ? undefined : () => handleAddClick('expense')}
+                    onEdit={activeTrip.status === 'completed' ? undefined : (e) => handleEditItem('expense', e)}
+                    onDelete={activeTrip.status === 'completed' ? undefined : (id) => handleDeleteItem('expense', id)}
                   />
                 </div>
                 <div className="space-y-8">
@@ -392,14 +436,27 @@ function DashboardContent() {
               <DashboardCharts trip={activeTrip} />
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-center bg-white rounded-3xl border border-gray-100 shadow-sm">
-              <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200 mb-6">
-                <MapIcon size={40} />
+            <div className="flex flex-col items-center justify-center min-h-[500px] text-center bg-white rounded-[2.5rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)] p-12 relative overflow-hidden group">
+              {/* Background Glow */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#10B17D]/5 rounded-full blur-3xl group-hover:bg-[#10B17D]/10 transition-all duration-500" />
+
+              <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center text-gray-200 mb-8 border border-gray-100 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                <MapIcon size={48} className="text-gray-200 group-hover:text-[#10B17D] transition-colors duration-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">No active trips found</h3>
-              <p className="text-gray-400 max-w-xs mb-8">Create your first trip or select one from the sidebar to start tracking expenses.</p>
-              <button onClick={() => handleAddClick('trip')} className="cursor-pointer flex items-center gap-2 px-8 py-3 bg-[#10B17D] text-white rounded-xl font-bold hover:bg-[#0D8F65] hover:shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95">
-                <Plus size={20} /> Create First Trip
+
+              <div className="space-y-3">
+                <h3 className="text-3xl font-black text-gray-900 tracking-tight">No Ongoing Trips Found</h3>
+                <p className="text-gray-400 font-bold max-w-sm mx-auto leading-relaxed">
+                  Every great journey starts with a single plan. Create your first trip to start tracking expenses and splitting costs with friends.
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleAddClick('trip')}
+                className="mt-10 cursor-pointer flex items-center gap-3 px-10 py-4 bg-gray-900 text-white rounded-2xl font-black text-sm tracking-widest uppercase hover:bg-[#10B17D] shadow-xl hover:shadow-[#10B17D]/20 transition-all active:scale-95 group/btn"
+              >
+                <Plus size={20} className="group-hover/btn:rotate-90 transition-transform duration-300" />
+                <span>Start New Journey</span>
               </button>
             </div>
           )}

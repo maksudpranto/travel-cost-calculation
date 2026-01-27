@@ -7,7 +7,7 @@ import { AddModal, DeleteConfirmModal } from '../components/Modals';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { Trip } from '../type';
-import { TripCard } from '../components/TripCard';
+import { TripListItem } from '../components/TripListItem';
 
 export default function TripsPage() {
     const { data: session } = authClient.useSession();
@@ -17,7 +17,7 @@ export default function TripsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<'trip' | 'profile'>('trip');
+    const [modalType, setModalType] = useState<'trip' | 'profile' | 'bulk_trip'>('trip');
     const [editingItem, setEditingItem] = useState<any>(null);
     const [itemToDelete, setItemToDelete] = useState<{ type: 'trip', id: number } | null>(null);
 
@@ -49,7 +49,7 @@ export default function TripsPage() {
 
     const handleEditTrip = (trip: Trip) => {
         setEditingItem(trip);
-        setModalType('trip');
+        setModalType(trip.type === 'bulk' ? 'bulk_trip' : 'trip');
         setModalOpen(true);
     };
 
@@ -184,10 +184,23 @@ export default function TripsPage() {
                             </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {trips.filter(t => t.type !== 'bulk').map(trip => (
-                                <TripCard key={trip.id} trip={trip} onEdit={handleEditTrip} onDelete={handleDeleteTrip} router={router} formatDate={formatDate} />
-                            ))}
+                        <div className="space-y-4">
+                            {/* Table Header */}
+                            <div className="hidden sm:flex items-center gap-6 px-4 py-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100 mb-2">
+                                <div className="w-12 text-center">#</div>
+                                <div className="flex-1">Trip Details</div>
+                                <div className="flex items-center sm:w-44">
+                                    <div className="w-24 text-right">Spent</div>
+                                    <div className="w-20 text-right">People</div>
+                                </div>
+                                <div className="w-[140px] ml-4 text-right">Actions</div>
+                            </div>
+
+                            <div className="flex flex-col gap-4">
+                                {trips.filter(t => t.type !== 'bulk').map(trip => (
+                                    <TripListItem key={trip.id} trip={trip} onEdit={handleEditTrip} onDelete={handleDeleteTrip} router={router} formatDate={formatDate} />
+                                ))}
+                            </div>
                         </div>
                     )}
 

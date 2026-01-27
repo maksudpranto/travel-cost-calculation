@@ -114,6 +114,8 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
         setName(initialData.name || '');
         setTouristCount(initialData.touristCount?.toString() || '');
         setFeePerPerson(initialData.feePerPerson?.toString() || '');
+        setStartDate(initialData.startDate || '');
+        setEndDate(initialData.endDate || '');
       }
     } else {
       setName('');
@@ -140,7 +142,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
     } else if (type === 'profile') {
       onSave({ name, image: imageUrl });
     } else if (type === 'bulk_trip') {
-      onSave({ name, touristCount: Number(touristCount), feePerPerson: Number(feePerPerson) });
+      onSave({ name, touristCount: Number(touristCount), feePerPerson: Number(feePerPerson), startDate, endDate });
     } else {
       onSave({ item, description, amount: Number(amount) });
     }
@@ -299,6 +301,18 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
                     <input required type="number" min="0" placeholder="0.00" value={feePerPerson} onChange={(e) => setFeePerPerson(e.target.value)} className={`${inputStyle} h-16 pl-16`} />
                   </div>
                 </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <ModernDatePicker
+                  label="Begins"
+                  value={startDate}
+                  onChange={setStartDate}
+                />
+                <ModernDatePicker
+                  label="Conclusion"
+                  value={endDate}
+                  onChange={setEndDate}
+                />
               </div>
             </div>
           )}

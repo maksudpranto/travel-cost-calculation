@@ -41,12 +41,19 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const pathname = usePathname();
   const { isAgentMode, toggleAgentMode } = useAgentMode();
-  const [expandedSections, setExpandedSections] = React.useState<string[]>(['Trips', 'Bulk Tours']);
+  const [expandedSections, setExpandedSections] = React.useState<string[]>(['Ongoing Trips', 'Ongoing Group Tours']);
 
-  const isActive = (path: string) => {
-    if (path === '/bulk_calculation') {
-      return pathname === '/bulk_calculation' && !activeTripId;
+  const isActive = (path: string, label: string) => {
+    // Parent highlighting
+    if (label === 'Ongoing Trips') {
+      return false; // Ongoing Trips is now just a container for the list, highlighting handled by sub-items or explicit navigation
     }
+    if (label === 'Ongoing Group Tours') {
+      if (pathname === '/calculations') return false; // Let "All Group Tours" handle it
+      return pathname === '/bulk_calculation';
+    }
+
+    // Exact match for other items
     return pathname === path;
   };
 
@@ -60,10 +67,12 @@ export const Sidebar = ({
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: MapIcon, label: 'Trips', path: '/trips' },
+    { icon: ShieldCheck, label: 'All Trips', path: '/trips' },
+    { icon: MapIcon, label: 'Ongoing Trips', path: '/trips' },
     ...(isAgentMode ? [
       { icon: LayoutDashboard, label: 'Dashboard', path: '/agent_dashboard' },
-      { icon: ShieldCheck, label: 'Bulk Tours', path: '/calculations' }
+      { icon: ShieldCheck, label: 'All Group Tours', path: '/calculations' },
+      { icon: Calculator, label: 'Ongoing Group Tours', path: '/bulk_calculation' }
     ] : []),
   ];
 
@@ -105,11 +114,11 @@ export const Sidebar = ({
               <p className="px-4 text-[10px] font-bold text-gray-500/70 uppercase tracking-widest mb-4">Main Menu</p>
               <div className="space-y-1">
                 {navItems.map((item, index) => {
-                  const active = isActive(item.path);
-                  const isAgentItem = index >= 2;
+                  const active = isActive(item.path, item.label);
+                  const isAgentItem = index >= 3;
                   return (
                     <React.Fragment key={item.label}>
-                      {isAgentMode && index === 2 && (
+                      {isAgentMode && index === 3 && (
                         <div className="py-4 px-4 flex items-center gap-3">
                           <div className="h-[1px] flex-1 bg-white/5" />
                           <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Agent Tools</span>
@@ -128,7 +137,7 @@ export const Sidebar = ({
                             <span className="font-bold text-sm">{item.label}</span>
                           </div>
                         </Link>
-                        {(item.label === 'Trips' || item.label === 'Bulk Tours') && (
+                        {(item.label === 'Ongoing Trips' || item.label === 'Ongoing Group Tours') && (
                           <button
                             onClick={() => toggleSection(item.label)}
                             className={`
@@ -143,9 +152,9 @@ export const Sidebar = ({
                       </div>
 
                       {/* Trips Sub-items (Your Journeys) */}
-                      {item.label === 'Trips' && expandedSections.includes('Trips') && trips.filter(t => t.type !== 'bulk').length > 0 && (
+                      {item.label === 'Ongoing Trips' && expandedSections.includes('Ongoing Trips') && trips.filter(t => t.type !== 'bulk' && t.status !== 'completed').length > 0 && (
                         <div className="ml-9 mt-2 mb-4 space-y-1 overflow-hidden transition-all duration-300">
-                          {trips.filter(t => t.type !== 'bulk').map((trip) => {
+                          {trips.filter(t => t.type !== 'bulk' && t.status !== 'completed').sort((a, b) => b.id - a.id).slice(0, 5).map((trip) => {
                             const isTripActive = activeTripId === trip.id;
                             return (
                               <div
@@ -179,44 +188,42 @@ export const Sidebar = ({
                         </div>
                       )}
                       {/* Bulk Calculations Sub-items */}
-                      {item.label === 'Bulk Tours' && expandedSections.includes('Bulk Tours') && trips.filter(t => t.type === 'bulk').length > 0 && (
-                        <div className="ml-9 mt-2 mb-4 space-y-1 overflow-hidden transition-all duration-300">
-                          {trips.filter(t => t.type === 'bulk').map((trip) => {
-                            const isTripActive = activeTripId === trip.id;
-                            return (
-                              <div
-                                key={trip.id}
-                                className={`
+                      {item.label === 'Ongoing Group Tours' && expandedSections.includes(item.label) &&
+                        trips.filter(t => t.type === 'bulk' && t.status !== 'completed').length > 0 && (
+                          <div className="ml-9 mt-2 mb-4 space-y-1 overflow-hidden transition-all duration-300">
+                            {trips.filter(t => t.type === 'bulk' && t.status !== 'completed').sort((a, b) => b.id - a.id).slice(0, 5).map((trip) => {
+                              const isTripActive = activeTripId === trip.id;
+                              return (
+                                <div
+                                  key={trip.id}
+                                  className={`
                                   group flex items-center justify-between px-4 py-2 rounded-xl cursor-pointer transition-all duration-200
                                   ${isTripActive
-                                    ? 'text-[#10B17D] bg-white/5'
-                                    : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'}
+                                      ? 'text-[#10B17D] bg-white/5'
+                                      : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'}
                                 `}
-                                onClick={() => { onSelectTrip(trip.id); onClose(); }}
-                              >
-                                <div className="flex items-center gap-2 min-w-0">
+                                  onClick={() => { onSelectTrip(trip.id); onClose(); }}
+                                >
                                   <span className="truncate font-bold text-[13px]">{trip.name}</span>
-                                  {trip.status === 'completed' && <Lock size={12} className="text-amber-500 shrink-0" />}
+                                  <div className={`flex items-center gap-1 ${isTripActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); onEditTrip(trip); onClose(); }}
+                                      className="p-1 hover:bg-white/10 rounded-md text-gray-600 hover:text-white transition-colors cursor-pointer"
+                                    >
+                                      <Edit2 size={10} />
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); onClose(); }}
+                                      className="p-1 hover:bg-white/10 rounded-md text-gray-600 hover:text-rose-400 transition-colors cursor-pointer"
+                                    >
+                                      <Trash2 size={10} />
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className={`flex items-center gap-1 ${isTripActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); onEditTrip(trip); onClose(); }}
-                                    className="p-1 hover:bg-white/10 rounded-md text-gray-600 hover:text-white transition-colors cursor-pointer"
-                                  >
-                                    <Edit2 size={10} />
-                                  </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); onClose(); }}
-                                    className="p-1 hover:bg-white/10 rounded-md text-gray-600 hover:text-rose-400 transition-colors cursor-pointer"
-                                  >
-                                    <Trash2 size={10} />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                              );
+                            })}
+                          </div>
+                        )}
                     </React.Fragment>
                   );
                 })}

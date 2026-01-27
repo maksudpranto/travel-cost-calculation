@@ -61,6 +61,8 @@ export default function BulkCalculation() {
       }
     } catch (error) {
       console.error("Failed to fetch trips", error);
+    } finally {
+      setIsTripsFetched(true);
     }
   };
 
@@ -97,6 +99,7 @@ export default function BulkCalculation() {
   const [error, setError] = useState<string | null>(null);
 
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isTripsFetched, setIsTripsFetched] = useState(false);
 
   // --- PERSISTENCE & LOADING ---
   useEffect(() => {
@@ -111,17 +114,16 @@ export default function BulkCalculation() {
           setTouristCount(selected.touristCount ?? '');
           setFeePerPerson(selected.feePerPerson ?? '');
           setTourStatus(selected.status || 'active');
-          setIsBasicLocked(!!selected.status); // Lock by default if it's a saved trip
+          setIsBasicLocked(true);
+
           setExpenses(selected.expenses.map(e => ({ id: e.id, item: e.item, amount: e.amount })));
         }
       }
     } else {
-      // No tripId - this is a "New Calculation"
       setCurrentTripId(null);
       setActiveTripName("New Calculation");
 
       if (!isLoaded) {
-        // Initial load: try to restore draft from localStorage
         const saved = localStorage.getItem('bulk_calc_data');
         if (saved) {
           try {
@@ -134,8 +136,6 @@ export default function BulkCalculation() {
           }
         }
       } else {
-        // We're already loaded and tripId became null (user clicked "New" or sidebar link)
-        // Reset everything to start fresh
         setTouristCount('');
         setFeePerPerson('');
         setExpenses([]);
@@ -153,21 +153,24 @@ export default function BulkCalculation() {
     }
   }, [touristCount, feePerPerson, expenses, isLoaded, currentTripId]);
 
+  // Redirect if no bulk tours remain
+  useEffect(() => {
+    if (isTripsFetched) {
+      const bulkTrips = trips.filter(t => t.type === 'bulk');
+      if (bulkTrips.length === 0) {
+        router.push('/agent_dashboard');
+      }
+    }
+  }, [isTripsFetched, trips, router]);
+
   // --- HANDLERS ---
 
   const handleNewCalculation = () => {
+    setEditingTrip(null);
     setModalType('bulk_trip');
     setModalOpen(true);
   };
 
-  const handleSaveClick = () => {
-    if (currentTripId) {
-      updateSavedTrip();
-    } else {
-      setModalType('trip');
-      setModalOpen(true);
-    }
-  };
 
   const updateSavedTrip = async () => {
     if (!currentTripId) return;
@@ -219,6 +222,7 @@ export default function BulkCalculation() {
         setFeePerPerson(data.feePerPerson || '');
         setExpenses([]);
         setTourStatus('active');
+        setIsBasicLocked(true);
         setModalOpen(false);
         fetchTrips(); // Ensure trips are re-fetched after add
         router.push(`/bulk_calculation?tripId=${newTrip.id}`);
@@ -302,7 +306,6 @@ export default function BulkCalculation() {
       fetchTrips();
       // If we deleted the current trip, clear state or redirect
       if (currentTripId === itemToDelete.id) {
-        handleNewCalculation();
         router.push('/bulk_calculation');
       }
     }
@@ -327,7 +330,12 @@ export default function BulkCalculation() {
       });
       if (res.ok) {
         setTourStatus(newStatus);
-        fetchTrips(); // Re-fetch to update sidebar status
+        if (newStatus === 'completed') {
+          // If ending, redirect to agent dashboard
+          router.push('/agent_dashboard');
+        } else {
+          fetchTrips(); // Re-fetch to update sidebar status
+        }
       }
     } catch (e) {
       console.error("Failed to update trip status", e);
@@ -427,7 +435,7 @@ export default function BulkCalculation() {
         }}
         onEditTrip={(trip) => {
           setEditingTrip(trip);
-          setModalType('trip');
+          setModalType(trip.type === 'bulk' ? 'bulk_trip' : 'trip');
           setModalOpen(true);
         }}
         onDeleteTrip={(trip) => {
@@ -518,16 +526,6 @@ export default function BulkCalculation() {
                   <Plus size={16} />
                   <span>New</span>
                 </button>
-                {!currentTripId && (
-                  <button
-                    onClick={handleSaveClick}
-                    disabled={isSaving}
-                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition-all cursor-pointer ${isSaving ? 'bg-gray-400' : 'bg-[#10B17D] hover:bg-[#0D8F65] shadow-[#10B17D]/20'}`}
-                  >
-                    <ShieldCheck size={16} />
-                    <span>Save As Trip</span>
-                  </button>
-                )}
                 {currentTripId && (
                   <button
                     onClick={() => {
