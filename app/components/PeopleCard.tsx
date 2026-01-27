@@ -31,34 +31,41 @@ export const PeopleCard = ({ people, onAdd, onEdit, onDelete }: PeopleCardProps)
       </div>
 
       <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-        {people.map((person, index) => (
-          <div key={person.id} className="flex items-center justify-between group p-2 rounded-xl hover:bg-gray-50/80 transition-colors">
-
-            {/* LEFT: Serial + Avatar + Name */}
-            <div className="flex items-center gap-3">
-              {/* SERIAL NUMBER */}
-              <span className="hidden sm:block text-gray-400 text-xs font-mono font-bold w-6">
-                {(index + 1).toString().padStart(2, '0')}
-              </span>
-
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                {person.name.charAt(0)}
+        {people.length > 0 ? (
+          people.map((person, index) => (
+            <div key={person.id} className="flex items-center justify-between group p-2 rounded-xl hover:bg-gray-50/80 transition-colors">
+              {/* LEFT: Serial + Avatar + Name */}
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:block text-gray-400 text-xs font-mono font-bold w-6">
+                  {(index + 1).toString().padStart(2, '0')}
+                </span>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                  {person.name.charAt(0)}
+                </div>
+                <span className="font-semibold text-gray-900">{person.name}</span>
               </div>
-              <span className="font-semibold text-gray-900">{person.name}</span>
+
+              {/* RIGHT: Amount + Actions */}
+              <div className="flex items-center gap-3">
+                <div className="font-bold tabular-nums text-sm text-gray-700 bg-gray-100/50 border border-gray-200/50 px-2 sm:px-3 py-1.5 rounded-lg w-auto sm:w-28 text-right backdrop-blur-sm">
+                  ৳{person.deposit.toLocaleString()}
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => onEdit(person)} className="cursor-pointer text-gray-300 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 hover:shadow-md active:scale-90 transition-all"><Pencil size={16} /></button>
+                  <button onClick={() => onDelete(person.id)} className="cursor-pointer text-gray-300 hover:text-red-600 p-2 rounded-md hover:bg-red-50 hover:shadow-md active:scale-90 transition-all"><Trash2 size={16} /></button>
+                </div>
+              </div>
             </div>
-
-            {/* RIGHT: Amount + Actions */}
-            <div className="flex items-center gap-3">
-              <div className="font-bold tabular-nums text-sm text-gray-700 bg-gray-100/50 border border-gray-200/50 px-2 sm:px-3 py-1.5 rounded-lg w-auto sm:w-28 text-right backdrop-blur-sm">
-                ৳{person.deposit.toLocaleString()}
-              </div>
-              <div className="flex gap-1">
-                <button onClick={() => onEdit(person)} className="cursor-pointer text-gray-300 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 hover:shadow-md active:scale-90 transition-all"><Pencil size={16} /></button>
-                <button onClick={() => onDelete(person.id)} className="cursor-pointer text-gray-300 hover:text-red-600 p-2 rounded-md hover:bg-red-50 hover:shadow-md active:scale-90 transition-all"><Trash2 size={16} /></button>
-              </div>
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+              <Plus className="text-gray-300" size={32} />
             </div>
+            <h4 className="text-sm font-bold text-gray-900 mb-1">No people added yet</h4>
+            <p className="text-xs text-gray-400 max-w-[200px]">Add your travel buddies to start tracking deposits and splitting costs.</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

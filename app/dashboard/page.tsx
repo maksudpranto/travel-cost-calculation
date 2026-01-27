@@ -341,7 +341,7 @@ function DashboardContent() {
                 <>
                   <button onClick={handleExport} className="cursor-pointer flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:shadow-sm transition-all active:scale-95">
                     <Download size={18} />
-                    <span className="hidden sm:inline">Export</span>
+                    <span>Export</span>
                   </button>
                 </>
               )}

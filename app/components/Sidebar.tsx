@@ -115,7 +115,7 @@ export const Sidebar = ({
                           ? 'bg-gray-50 text-[#10B17D]'
                           : 'text-gray-600 hover:bg-gray-50'}
                       `}
-                      onClick={() => onSelectTrip(trip.id)}
+                      onClick={() => { onSelectTrip(trip.id); onClose(); }}
                     >
                       <div className="flex items-center gap-3 truncate flex-1">
                         <div className={`w-2 h-2 rounded-full ${activeTripId === trip.id ? 'bg-[#10B17D]' : 'bg-gray-200'}`}></div>
@@ -159,7 +159,6 @@ export const Sidebar = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-black text-gray-900 truncate">{user?.name || 'Guest User'}</p>
-                  <p className="text-[10px] font-bold text-[#10B17D] uppercase tracking-wider">Administrator</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
