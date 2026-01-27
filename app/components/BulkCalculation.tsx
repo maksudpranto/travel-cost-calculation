@@ -13,7 +13,9 @@ import {
   Pencil,
   Check,
   X,
-  Menu
+  Menu,
+  Receipt,
+  Coins
 } from "lucide-react";
 import Link from 'next/link';
 import { authClient } from '@/lib/auth-client';
@@ -73,6 +75,7 @@ export default function BulkCalculation() {
   // --- EDIT & DELETE STATE ---
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -120,23 +123,28 @@ export default function BulkCalculation() {
   const handleExpenseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newItem || newAmount === '') return;
+    if (!newItem) {
+      setError("Please enter an item name");
+      return;
+    }
 
     const amountVal = parseFloat(newAmount);
-    if (isNaN(amountVal) || amountVal < 0) return;
+    if (!newAmount || isNaN(amountVal) || amountVal <= 0) {
+      setError("Please enter a valid amount (> 0)");
+      return;
+    }
+
+    setError(null);
 
     if (editingId) {
-      // UPDATE EXISTING
       setExpenses(expenses.map(e =>
         e.id === editingId ? { ...e, item: newItem, amount: amountVal } : e
       ));
-      setEditingId(null); // Exit edit mode
+      setEditingId(null);
     } else {
-      // ADD NEW
       setExpenses([...expenses, { id: Date.now(), item: newItem, amount: amountVal }]);
     }
 
-    // Clear inputs
     setNewItem("");
     setNewAmount("");
   };
@@ -162,6 +170,32 @@ export default function BulkCalculation() {
       setDeleteId(null);
       if (editingId === deleteId) cancelEdit();
     }
+  };
+
+  // --- HELPER COMPONENTS ---
+  const StatItem = ({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) => {
+    const colorMap: Record<string, string> = {
+      blue: 'from-blue-500 to-blue-600 shadow-blue-200',
+      rose: 'from-rose-500 to-rose-600 shadow-rose-200',
+      emerald: 'from-emerald-500 to-emerald-600 shadow-emerald-200',
+      purple: 'from-purple-500 to-indigo-600 shadow-indigo-200',
+    };
+
+    return (
+      <div className={`bg-gradient-to-br ${colorMap[color] || 'from-gray-500 to-gray-600'} p-4 sm:p-6 rounded-2xl shadow-lg hover:scale-[1.02] transition-all duration-300 group text-white border border-white/10`}>
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-white/20 backdrop-blur-md border border-white/20">
+            <Icon size={18} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
+          </div>
+        </div>
+        <div>
+          <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-1">{label}</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl sm:text-3xl font-black leading-none tracking-tight">৳{value}</span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (!isLoaded) return null;
@@ -194,8 +228,8 @@ export default function BulkCalculation() {
         trips={trips}
         activeTripId={0}
         onSelectTrip={(id) => router.push(`/dashboard?tripId=${id}`)}
-        onEditTrip={() => { }} // Not needed here
-        onDeleteTrip={() => { }} // Not needed here
+        onEditTrip={() => { }}
+        onDeleteTrip={() => { }}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         user={session?.user}
@@ -204,7 +238,7 @@ export default function BulkCalculation() {
       />
 
       <main className="md:ml-72 flex-1 min-w-0">
-        <div className="max-w-[1400px] mx-auto p-4 sm:p-6 md:p-10 space-y-8 md:space-y-10">
+        <div className="max-w-[1400px] mx-auto p-4 sm:p-6 md:p-8 space-y-8">
 
           {/* HEADER */}
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pb-6 border-b border-gray-100">
@@ -220,7 +254,7 @@ export default function BulkCalculation() {
                   <Calculator className="text-[#10B17D] shrink-0" size={28} />
                   <span className="truncate">Calculator</span>
                 </h1>
-                <p className="text-xs md:text-sm text-gray-400 font-medium mt-1">Manage budget for large groups</p>
+                <p className="text-xs md:text-sm text-gray-400 font-medium mt-1">Quick budget planning for any trip</p>
               </div>
             </div>
             <Link href="/" className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-400 hover:text-[#10B17D] hover:bg-gray-50 transition-all cursor-pointer">
@@ -229,21 +263,49 @@ export default function BulkCalculation() {
             </Link>
           </header>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* TOP SUMMARY ROW - Matching Dashboard Grid Cols */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <StatItem
+              label="Total Collection"
+              value={stats.totalCollection.toLocaleString()}
+              icon={Wallet}
+              color="blue"
+            />
+            <StatItem
+              label="Total Spent"
+              value={stats.totalCost.toLocaleString()}
+              icon={Receipt}
+              color="rose"
+            />
+            <StatItem
+              label="Remaining Fund"
+              value={stats.remaining.toLocaleString()}
+              icon={Coins}
+              color={stats.remaining >= 0 ? "emerald" : "rose"}
+            />
+            <StatItem
+              label="Cost Per Head"
+              value={Math.round(stats.avgCostPerHead).toLocaleString()}
+              icon={Users}
+              color="purple"
+            />
+          </div>
 
-            {/* LEFT COLUMN */}
-            <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            {/* LEFT COLUMN: Inputs */}
+            <div className="xl:col-span-2 space-y-8">
 
-              {/* 1. CONFIGURATION CARD */}
+              {/* Tour Configuration */}
               <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Tour Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                  {/* Tourist Input */}
+                <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                  <Users className="text-[#10B17D]" size={20} />
+                  Basic Details
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Total Tourists</label>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total Tourists</label>
                     <div className="relative group">
-                      <Users className="absolute left-3 top-3 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
+                      <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#10B17D] transition-colors" size={18} />
                       <input
                         type="number"
                         min="0"
@@ -251,19 +313,18 @@ export default function BulkCalculation() {
                         value={touristCount}
                         onChange={(e) => {
                           const val = e.target.value;
-                          if (val === '') setTouristCount('');
-                          else setTouristCount(Math.max(0, parseInt(val)));
+                          setTouristCount(val === '' ? '' : Math.max(0, parseInt(val)));
+                          if (error) setError(null);
                         }}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#10B17D]/20 focus:border-[#10B17D] outline-none transition-all"
                       />
                     </div>
                   </div>
 
-                  {/* Fee Input */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Fee Per Person</label>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Fee Per Person</label>
                     <div className="relative group">
-                      <Ticket className="absolute left-3 top-3 text-gray-400 group-focus-within:text-emerald-500 transition-colors" size={18} />
+                      <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#10B17D] transition-colors" size={18} />
                       <input
                         type="number"
                         min="0"
@@ -271,143 +332,147 @@ export default function BulkCalculation() {
                         value={feePerPerson}
                         onChange={(e) => {
                           const val = e.target.value;
-                          if (val === '') setFeePerPerson('');
-                          else setFeePerPerson(Math.max(0, parseFloat(val)));
+                          setFeePerPerson(val === '' ? '' : Math.max(0, parseFloat(val)));
+                          if (error) setError(null);
                         }}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-[#10B17D]/20 focus:border-[#10B17D] outline-none transition-all"
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 2. ADD / EDIT EXPENSE FORM */}
+              {/* Add/Edit Expense Form */}
               <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-gray-800">{editingId ? 'Edit Expense' : 'Add Expense'}</h3>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <Receipt className="text-rose-500" size={20} />
+                    {editingId ? 'Edit Expense' : 'Estimate Expense'}
+                  </h3>
                   {editingId && (
-                    <button onClick={cancelEdit} className="text-xs text-red-500 font-bold hover:underline">Cancel Edit</button>
+                    <button onClick={cancelEdit} className="text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors">Cancel Edit</button>
                   )}
                 </div>
 
-                <form onSubmit={handleExpenseSubmit} className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    placeholder="Item Name"
-                    value={newItem}
-                    onChange={(e) => setNewItem(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#10B17D] transition-all"
-                  />
+                {error && (
+                  <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                    <X size={14} className="shrink-0" />
+                    {error}
+                  </div>
+                )}
 
-                  <div className="flex gap-3">
+                <form onSubmit={handleExpenseSubmit} className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
                     <input
-                      type="number"
-                      min="0"
-                      placeholder="Cost"
-                      value={newAmount}
+                      type="text"
+                      placeholder="e.g. Bus Fare, Hotel, Meal"
+                      value={newItem}
                       onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '' || Number(val) >= 0) setNewAmount(val);
+                        setNewItem(e.target.value);
+                        if (error) setError(null);
                       }}
-                      className="flex-1 sm:w-32 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#10B17D] transition-all"
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#10B17D] focus:ring-2 focus:ring-[#10B17D]/20 transition-all font-medium"
                     />
-
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="w-full md:w-40 relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">৳</span>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Cost"
+                        value={newAmount}
+                        onChange={(e) => {
+                          setNewAmount(e.target.value);
+                          if (error) setError(null);
+                        }}
+                        className="w-full pl-8 pr-4 py-3 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-[#10B17D] focus:ring-2 focus:ring-[#10B17D]/20 transition-all font-bold"
+                      />
+                    </div>
                     <button
                       type="submit"
-                      className={`p-3 rounded-xl transition-all shadow-lg text-white flex items-center justify-center min-w-[50px] shrink-0 ${editingId
-                        ? 'bg-[#10B17D] hover:bg-[#0D8F65] shadow-[#10B17D]/20'
-                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
-                        }`}
+                      className="p-3 bg-[#10B17D] text-white rounded-xl hover:bg-[#0D8F65] shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95 flex items-center justify-center min-w-[52px]"
                     >
                       {editingId ? <Check size={24} /> : <Plus size={24} />}
                     </button>
                   </div>
                 </form>
-
-                {/* EXPENSE LIST */}
-                <div className="mt-6 space-y-2">
-                  {expenses.length === 0 && (
-                    <p className="text-center text-gray-400 text-sm py-4">No expenses added yet.</p>
-                  )}
-                  {expenses.map(e => (
-                    <div key={e.id} className={`flex justify-between items-center p-3 rounded-xl border transition-all group ${editingId === e.id ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50 border-transparent hover:border-gray-100'}`}>
-                      <span className="font-medium text-gray-700 break-all mr-2">{e.item}</span>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="font-bold text-gray-900">৳{e.amount.toLocaleString()}</span>
-
-                        {/* ACTION BUTTONS */}
-                        <div className="flex gap-1">
-                          <button onClick={() => startEdit(e)} className="text-gray-300 hover:text-blue-500 transition-colors p-1.5 hover:bg-blue-50 rounded-lg">
-                            <Pencil size={16} />
-                          </button>
-                          <button onClick={() => setDeleteId(e.id)} className="text-gray-300 hover:text-red-500 transition-colors p-1.5 hover:bg-red-50 rounded-lg">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
+
+              {/* PROGRESS VIEW FOR BUDGET */}
+              {stats.totalCollection > 0 && (
+                <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Budget Utilization</span>
+                    <span className={`text-sm font-black ${stats.percentUsed > 100 ? 'text-rose-600' : 'text-[#10B17D]'}`}>
+                      {Math.round(stats.percentUsed)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${stats.percentUsed > 100 ? 'bg-rose-500' : 'bg-[#10B17D]'}`}
+                      style={{ width: `${Math.min(stats.percentUsed, 100)}%` }}
+                    />
+                  </div>
+                  <p className="mt-4 text-xs text-gray-400 font-medium">
+                    {stats.percentUsed > 100
+                      ? `You are over budget by ৳${Math.abs(stats.remaining).toLocaleString()}`
+                      : `You still have ৳${stats.remaining.toLocaleString()} left from the collection.`}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* RIGHT COLUMN: BIG STATS */}
-            <div className="space-y-6">
+            {/* RIGHT COLUMN: List (Matching Dashboard card style) */}
+            <div className="space-y-8">
+              <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 flex flex-col min-h-full">
+                <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                  <Receipt className="text-rose-500" size={20} />
+                  Expenses List
+                </h3>
 
-              {/* TOTAL BUDGET CARD */}
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl shadow-blue-200">
-                <div className="flex items-center gap-3 mb-2 opacity-80">
-                  <Wallet size={20} />
-                  <span className="text-sm font-medium uppercase tracking-wider">Total Collection</span>
-                </div>
-                <div className="text-4xl font-extrabold mb-1 break-all leading-tight">
-                  ৳{stats.totalCollection.toLocaleString()}
-                </div>
-                <p className="text-blue-100 text-sm">
-                  {stats.safeCount} tourists × ৳{stats.safeFee}
-                </p>
-              </div>
-
-              {/* REMAINING MONEY CARD */}
-              <div className={`bg-white rounded-2xl p-6 border-l-4 shadow-sm ${stats.remaining >= 0 ? 'border-emerald-500' : 'border-rose-500'}`}>
-                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Remaining Money</p>
-                <h2 className={`text-3xl font-extrabold break-all leading-tight ${stats.remaining >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  ৳{stats.remaining.toLocaleString()}
-                </h2>
-
-                {/* Budget Progress Bar */}
-                <div className="mt-4">
-                  <div className="flex justify-between text-xs font-bold text-gray-400 mb-1">
-                    <span>Budget Used</span>
-                    <span>{Math.round(stats.percentUsed)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${stats.percentUsed > 100 ? 'bg-rose-500' : 'bg-blue-500'}`}
-                      style={{ width: `${Math.min(stats.percentUsed, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* BREAKDOWN GRID */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                  <div className="mb-2 p-2 bg-teal-50 w-fit rounded-lg text-teal-600"><TrendingDown size={20} /></div>
-                  <p className="text-gray-400 text-xs font-bold uppercase">Total Cost</p>
-                  <p className="text-xl font-bold text-gray-900 break-all">৳{stats.totalCost.toLocaleString()}</p>
-                </div>
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                  <div className="mb-2 p-2 bg-teal-50 w-fit rounded-lg text-teal-600"><Users size={20} /></div>
-                  <p className="text-gray-400 text-xs font-bold uppercase">Cost / Head</p>
-                  <p className="text-xl font-bold text-gray-900 break-all">৳{Math.round(stats.avgCostPerHead).toLocaleString()}</p>
+                <div className="space-y-3 flex-1 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+                  {expenses.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                        <Receipt className="text-gray-300" size={32} />
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-900 mb-1">List is empty</h4>
+                      <p className="text-xs text-gray-400 max-w-[160px]">Add potential trip costs to see the breakdown.</p>
+                    </div>
+                  ) : (
+                    expenses.map((e, idx) => (
+                      <div key={e.id} className="flex items-center justify-between group p-3 rounded-xl hover:bg-gray-50/80 transition-all border border-transparent hover:border-gray-100">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <span className="text-[10px] font-mono font-bold text-gray-400 w-5">{(idx + 1).toString().padStart(2, '0')}</span>
+                          <span className="font-semibold text-gray-900 text-sm truncate">{e.item}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-gray-700 text-sm">৳{e.amount.toLocaleString()}</span>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => startEdit(e)} className="p-1.5 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-lg transition-colors cursor-pointer">
+                              <Pencil size={14} />
+                            </button>
+                            <button onClick={() => setDeleteId(e.id)} className="p-1.5 text-gray-300 hover:text-rose-500 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-
             </div>
           </div>
         </div>
       </main>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #e5e7eb; }
+      `}</style>
     </div>
   );
 }

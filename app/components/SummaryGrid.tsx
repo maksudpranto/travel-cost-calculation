@@ -26,27 +26,36 @@ const StatItem = ({
   subLabel?: string;
   icon: LucideIcon;
   color: string;
-}) => (
-  <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-md transition-all duration-300 group">
-    <div className="flex items-center justify-between mb-3 sm:mb-4">
-      <div className={`p-2 rounded-xl sm:p-2.5 bg-${color}-50 text-${color}-600 transition-all duration-300 shadow-sm border border-${color}-100/50`}>
-        <Icon size={18} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
-      </div>
-    </div>
+}) => {
+  const colorMap: Record<string, string> = {
+    blue: 'from-blue-500 to-blue-600 shadow-blue-200',
+    rose: 'from-rose-500 to-rose-600 shadow-rose-200',
+    emerald: 'from-emerald-500 to-emerald-600 shadow-emerald-200',
+    purple: 'from-purple-500 to-indigo-600 shadow-indigo-200',
+  };
 
-    <div>
-      <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">{label}</p>
-      <div className="flex items-baseline gap-1">
-        <span className="text-lg sm:text-2xl font-black text-gray-900 leading-none">৳{value}</span>
+  return (
+    <div className={`bg-gradient-to-br ${colorMap[color] || 'from-gray-500 to-gray-600'} p-4 sm:p-6 rounded-2xl shadow-lg hover:scale-[1.02] transition-all duration-300 group text-white border border-white/10`}>
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-white/20 backdrop-blur-md border border-white/20">
+          <Icon size={18} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
+        </div>
       </div>
-      {subLabel && subLabel !== 'Title: -' && (
-        <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium truncate mt-1.5 sm:mt-2">
-          {subLabel}
-        </p>
-      )}
+
+      <div>
+        <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-1">{label}</p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-xl sm:text-3xl font-black leading-none tracking-tight">৳{value}</span>
+        </div>
+        {subLabel && subLabel !== 'Title: -' && (
+          <p className="text-[10px] text-white/70 font-medium truncate mt-2 border-t border-white/10 pt-2">
+            {subLabel}
+          </p>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const SummaryGrid = ({ stats }: SummaryGridProps) => {
   return (

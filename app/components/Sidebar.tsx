@@ -61,7 +61,7 @@ export const Sidebar = ({
 
       {/* Sidebar */}
       <aside className={`
-        fixed left-0 top-0 h-full w-72 bg-white border-r border-gray-100 z-50
+        fixed left-0 top-0 h-full w-72 bg-gradient-to-b from-[#0D3D32] to-[#08241E] border-r border-white/5 z-50
         transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
@@ -69,12 +69,12 @@ export const Sidebar = ({
           {/* Logo Section */}
           <div className="p-8 pb-10 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#10B17D] rounded-xl flex items-center justify-center shadow-lg shadow-[#10B17D]/20">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#10B17D] to-[#0D8F65] rounded-xl flex items-center justify-center shadow-lg shadow-[#10B17D]/20">
                 <Map className="text-white" size={24} />
               </div>
-              <span className="text-xl font-black text-gray-900 tracking-tight">TravelCost</span>
+              <span className="text-xl font-black text-white tracking-tight">TravelCost</span>
             </div>
-            <button onClick={onClose} className="md:hidden p-2 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors">
+            <button onClick={onClose} className="md:hidden p-2 text-gray-400 hover:bg-white/5 rounded-xl transition-colors">
               <X size={20} />
             </button>
           </div>
@@ -83,89 +83,95 @@ export const Sidebar = ({
           <div className="flex-1 overflow-y-auto px-4 space-y-8 sidebar-scrollbar">
             {/* Main Menu */}
             <div>
-              <p className="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Main Menu</p>
+              <p className="px-4 text-[10px] font-bold text-gray-500/70 uppercase tracking-widest mb-4">Main Menu</p>
               <div className="space-y-1">
-                {navItems.map((item) => (
-                  <Link key={item.label} href={item.path} onClick={onClose}>
-                    <div className={`
-                      flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200 group
-                      ${isActive(item.path)
-                        ? 'bg-[#10B17D] text-white shadow-lg shadow-[#10B17D]/20'
-                        : 'text-gray-500 hover:bg-gray-50 hover:text-[#10B17D]'}
-                    `}>
-                      <item.icon size={20} className={isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-[#10B17D]'} />
-                      <span className="font-bold text-sm">{item.label}</span>
-                    </div>
-                  </Link>
-                ))}
+                {navItems.map((item) => {
+                  const active = isActive(item.path);
+                  return (
+                    <Link key={item.label} href={item.path} onClick={onClose}>
+                      <div className={`
+                        flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200 group
+                        ${active
+                          ? 'bg-gradient-to-r from-[#10B17D] to-[#0D8F65] text-white'
+                          : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+                      `}>
+                        <item.icon size={20} className={active ? 'text-white' : 'text-gray-500 group-hover:text-white'} />
+                        <span className="font-bold text-sm">{item.label}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
             {/* Quick Trip Selector (Only show if on dashboard) */}
             {pathname === '/dashboard' && trips.length > 0 && (
               <div>
-                <p className="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Quick Switch</p>
+                <p className="px-4 text-[10px] font-bold text-gray-500/70 uppercase tracking-widest mb-4">Quick Switch</p>
                 <div className="space-y-1">
-                  {trips.map((trip) => (
-                    <div
-                      key={trip.id}
-                      className={`
-                        group flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200
-                        ${activeTripId === trip.id
-                          ? 'bg-gray-50 text-[#10B17D]'
-                          : 'text-gray-600 hover:bg-gray-50'}
-                      `}
-                      onClick={() => { onSelectTrip(trip.id); onClose(); }}
-                    >
-                      <div className="flex items-center gap-3 truncate flex-1">
-                        <div className={`w-2 h-2 rounded-full ${activeTripId === trip.id ? 'bg-[#10B17D]' : 'bg-gray-200'}`}></div>
-                        <span className="truncate font-medium text-xs">{trip.name}</span>
-                      </div>
+                  {trips.map((trip) => {
+                    const active = activeTripId === trip.id;
+                    return (
+                      <div
+                        key={trip.id}
+                        className={`
+                          group flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200
+                          ${active
+                            ? 'bg-white/10 text-[#10B17D]'
+                            : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}
+                        `}
+                        onClick={() => { onSelectTrip(trip.id); onClose(); }}
+                      >
+                        <div className="flex items-center gap-3 truncate flex-1">
+                          <div className={`w-2 h-2 rounded-full ${active ? 'bg-[#10B17D]' : 'bg-white/10'}`}></div>
+                          <span className="truncate font-medium text-xs">{trip.name}</span>
+                        </div>
 
-                      <div className={`flex items-center gap-1 ${activeTripId === trip.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onEditTrip(trip); }}
-                          className="p-1 hover:bg-white rounded-md text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); }}
-                          className="p-1 hover:bg-white rounded-md text-gray-400 hover:text-rose-600 transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        <div className={`flex items-center gap-1 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onEditTrip(trip); }}
+                            className="p-1 hover:bg-white/10 rounded-md text-gray-500 hover:text-white transition-colors cursor-pointer"
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); }}
+                            className="p-1 hover:bg-white/10 rounded-md text-gray-500 hover:text-rose-400 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
 
           {/* User Profile */}
-          <div className="p-4 border-t border-gray-100">
-            <div className="bg-gray-50 rounded-3xl p-4 flex items-center justify-between group hover:bg-gray-100/80 transition-all duration-300">
+          <div className="p-4 border-t border-white/5 bg-black/20 backdrop-blur-xl">
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-4 flex items-center justify-between group hover:bg-white/10 transition-all duration-300">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   {user?.image ? (
-                    <img src={user.image} alt={user.name} className="w-10 h-10 rounded-xl object-cover ring-2 ring-white" />
+                    <img src={user.image} alt={user.name} className="w-10 h-10 rounded-xl object-cover ring-2 ring-white/10" />
                   ) : (
-                    <div className="w-10 h-10 bg-[#10B17D]/10 text-[#10B17D] rounded-xl flex items-center justify-center font-black ring-2 ring-white">
+                    <div className="w-10 h-10 bg-[#10B17D]/10 text-[#10B17D] rounded-xl flex items-center justify-center font-black ring-2 ring-white/10">
                       {user?.name?.charAt(0) || <UserIcon size={18} />}
                     </div>
                   )}
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#092D25] rounded-full"></div>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black text-gray-900 truncate">{user?.name || 'Guest User'}</p>
+                  <p className="text-sm font-black text-white truncate">{user?.name || 'Guest User'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 {onEditProfile && (
                   <button
                     onClick={onEditProfile}
-                    className="p-2 text-gray-400 hover:text-[#10B17D] hover:bg-white rounded-xl transition-all active:scale-90 cursor-pointer"
+                    className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all active:scale-90 cursor-pointer"
                     title="Edit Profile"
                   >
                     <Edit2 size={16} />
@@ -173,7 +179,7 @@ export const Sidebar = ({
                 )}
                 <button
                   onClick={onLogout}
-                  className="p-2 text-gray-400 hover:text-rose-500 hover:bg-white rounded-xl transition-all active:scale-90 cursor-pointer"
+                  className="p-2 text-gray-400 hover:text-rose-400 hover:bg-white/10 rounded-xl transition-all active:scale-90 cursor-pointer"
                   title="Logout"
                 >
                   <LogOut size={18} />
@@ -181,7 +187,7 @@ export const Sidebar = ({
               </div>
             </div>
 
-            <Link href="/" className="mt-4 block text-center py-2 text-[10px] font-bold text-gray-400 hover:text-[#10B17D] transition-colors uppercase tracking-widest cursor-pointer">
+            <Link href="/" className="mt-4 block text-center py-2 text-[10px] font-bold text-gray-500 hover:text-white transition-colors uppercase tracking-widest cursor-pointer">
               Back to Home
             </Link>
           </div>
