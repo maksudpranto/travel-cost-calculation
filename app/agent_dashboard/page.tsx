@@ -60,7 +60,7 @@ export default function AgentDashboard() {
         }
     }, [session]);
 
-    const bulkTours = useMemo(() => trips.filter(t => t.type === 'bulk' && t.status === 'completed'), [trips]);
+    const bulkTours = useMemo(() => trips.filter(t => t.type === 'bulk').sort((a, b) => b.id - a.id), [trips]);
 
     const stats = useMemo(() => {
         const totalTours = bulkTours.length;
@@ -162,14 +162,14 @@ export default function AgentDashboard() {
 
     const StatCard = ({ label, value, icon: Icon, color, subValue }: { label: string; value: string; icon: any; color: 'blue' | 'rose' | 'emerald' | 'purple', subValue?: string }) => {
         const colorMap = {
-            blue: 'from-blue-500 to-blue-600 shadow-blue-200',
-            rose: 'from-rose-500 to-rose-600 shadow-rose-200',
-            emerald: 'from-emerald-500 to-emerald-600 shadow-emerald-200',
-            purple: 'from-purple-500 to-indigo-600 shadow-indigo-200',
+            blue: 'from-blue-500 to-blue-600',
+            rose: 'from-rose-500 to-rose-600',
+            emerald: 'from-emerald-500 to-emerald-600',
+            purple: 'from-purple-500 to-indigo-600',
         };
 
         return (
-            <div className={`bg-gradient-to-br ${colorMap[color]} p-6 rounded-3xl shadow-lg hover:scale-[1.02] transition-all duration-300 group text-white border border-white/10`}>
+            <div className={`bg-gradient-to-br ${colorMap[color]} p-6 rounded-3xl hover:scale-[1.02] transition-all duration-300 group text-white border border-white/10`}>
                 <div className="flex items-center justify-between mb-4">
                     <div className="p-2.5 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20">
                         <Icon size={22} strokeWidth={2.5} />
@@ -290,12 +290,7 @@ export default function AgentDashboard() {
                             icon={Calculator}
                             color="blue"
                         />
-                        <StatCard
-                            label="Total Spent"
-                            value={`৳${stats.totalSpend.toLocaleString()}`}
-                            icon={Receipt}
-                            color="rose"
-                        />
+
                         <StatCard
                             label="Total Net Profit"
                             value={`৳${stats.totalProfit.toLocaleString()}`}
@@ -331,8 +326,9 @@ export default function AgentDashboard() {
                                 <thead>
                                     <tr className="border-b border-gray-50">
                                         <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tour Name</th>
-                                        <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tour Date</th>
-                                        <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Tourists</th>
+                                        <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden md:table-cell">Tour Date</th>
+                                        <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center hidden md:table-cell">Tourists</th>
+                                        <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Tour Fee</th>
                                         <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Spend</th>
                                         <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Profit</th>
                                         <th className="pb-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Action</th>
@@ -345,12 +341,17 @@ export default function AgentDashboard() {
                                         const tourProfit = tourCollection - tourSpend;
 
                                         return (
-                                            <tr key={tour.id} className="group hover:bg-gray-50/50 transition-colors">
+                                            <tr
+                                                key={tour.id}
+                                                onClick={() => router.push(`/bulk_calculation?tripId=${tour.id}`)}
+                                                className="group hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                            >
                                                 <td className="py-5 font-bold text-gray-900">{tour.name}</td>
-                                                <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap">
+                                                <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap hidden md:table-cell">
                                                     {formatDate(tour.startDate || '')} — {formatDate(tour.endDate || '')}
                                                 </td>
-                                                <td className="py-5 text-gray-600 font-medium text-center">{tour.touristCount || 0}</td>
+                                                <td className="py-5 text-gray-600 font-medium text-center hidden md:table-cell">{tour.touristCount || 0}</td>
+                                                <td className="py-5 text-gray-600 font-bold text-center">৳{(tour.feePerPerson || 0).toLocaleString()}</td>
                                                 <td className="py-5 text-gray-600 font-bold text-right">৳{tourSpend.toLocaleString()}</td>
                                                 <td className={`py-5 font-black text-right ${tourProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                                                     <div className="flex items-center justify-end gap-1">
@@ -359,12 +360,12 @@ export default function AgentDashboard() {
                                                     </div>
                                                 </td>
                                                 <td className="py-5 text-right">
-                                                    <Link
-                                                        href={`/bulk_calculation?tripId=${tour.id}`}
+                                                    <div
+                                                        onClick={(e) => { e.stopPropagation(); router.push(`/bulk_calculation?tripId=${tour.id}`); }}
                                                         className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
                                                     >
                                                         <ArrowRight size={18} />
-                                                    </Link>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

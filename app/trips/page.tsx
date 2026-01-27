@@ -206,7 +206,11 @@ export default function TripsPage() {
                                 <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
                                     Your <span className="text-[#10B17D]">Journeys.</span>
                                 </h1>
-                                <p className="text-sm md:text-base text-gray-400 font-bold tracking-tight">Manage and track all your travel adventures</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-sm md:text-base text-gray-400 font-bold tracking-tight">Manage and track all your travel adventures</p>
+                                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                    <span className="text-xs font-bold text-[#10B17D] bg-[#10B17D]/10 px-2 py-0.5 rounded-full">{trips.filter(t => t.type !== 'bulk').length} Total</span>
+                                </div>
                             </div>
                         </div>
                         <button
@@ -219,14 +223,7 @@ export default function TripsPage() {
                     </header>
 
                     {/* Quick Stats Grid */}
-                    {trips.filter(t => t.type !== 'bulk').length > 0 && (
-                        <div className="flex">
-                            <div className="bg-white px-8 py-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group min-w-[200px] hover:border-[#10B17D]/20">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Total Trips</p>
-                                <p className="text-3xl font-black text-gray-900 group-hover:text-[#10B17D] transition-colors">{stats.count}</p>
-                            </div>
-                        </div>
-                    )}
+
 
                     {trips.filter(t => t.type !== 'bulk').length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[400px] text-center bg-white rounded-[40px] border border-dashed border-gray-200 p-12">
@@ -245,12 +242,12 @@ export default function TripsPage() {
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="border-b border-gray-50">
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-4">#</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Trip Details</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tour Date</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Spent</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">#</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Trip Details</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center hidden md:table-cell">Tour Date</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Spent</th>
                                             <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">People</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right pr-4">Actions</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
@@ -258,15 +255,15 @@ export default function TripsPage() {
                                             const totalSpent = trip.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
                                             return (
                                                 <tr key={trip.id} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => router.push(`/dashboard?tripId=${trip.id}`)}>
-                                                    <td className="py-5 pl-4">
+                                                    <td className="py-5 text-center">
                                                         <span className="text-[10px] font-mono font-bold text-gray-300">{(idx + 1).toString().padStart(2, '0')}</span>
                                                     </td>
                                                     <td className="py-5">
-                                                        <div className="flex items-center gap-3">
+                                                        <div className="flex items-center justify-center gap-3">
                                                             <div className="w-10 h-10 rounded-xl bg-[#10B17D]/10 text-[#10B17D] flex items-center justify-center transition-transform group-hover:scale-110">
                                                                 <MapIcon size={20} />
                                                             </div>
-                                                            <div className="flex flex-col">
+                                                            <div className="flex flex-col items-start">
                                                                 <span className="font-bold text-gray-900 flex items-center gap-2">
                                                                     {trip.status === 'completed' && <Lock size={14} className="text-amber-500 shrink-0" />}
                                                                     {trip.name}
@@ -274,16 +271,16 @@ export default function TripsPage() {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap">
-                                                        <div className="flex items-center gap-2">
+                                                    <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap text-center hidden md:table-cell">
+                                                        <div className="flex items-center justify-center gap-2">
                                                             <Calendar size={14} className="text-[#10B17D]" />
                                                             <span>{formatDate(trip.startDate || '')} — {formatDate(trip.endDate || '')}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="py-5 text-gray-900 font-bold text-right">৳{totalSpent.toLocaleString()}</td>
+                                                    <td className="py-5 text-gray-900 font-bold text-center">৳{totalSpent.toLocaleString()}</td>
                                                     <td className="py-5 text-gray-500 font-medium text-center">{trip.people.length}</td>
-                                                    <td className="py-5 text-right pr-4">
-                                                        <div className="flex items-center justify-end gap-2">
+                                                    <td className="py-5 text-center">
+                                                        <div className="flex items-center justify-center gap-2">
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleToggleStatus(trip); }}
                                                                 className={`p-2 rounded-xl transition-all active:scale-90 cursor-pointer ${trip.status === 'completed' ? 'text-emerald-500 hover:bg-emerald-50' : 'text-amber-500 hover:bg-amber-50'}`}

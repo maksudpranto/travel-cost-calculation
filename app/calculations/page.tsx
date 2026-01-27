@@ -158,8 +158,18 @@ export default function CalculationsPage() {
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    const bulkTrips = trips.filter(t => t.type === 'bulk');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
+    const bulkTrips = trips.filter(t => t.type === 'bulk').sort((a, b) => b.id - a.id); // Ensure sorting
+    const totalPages = Math.ceil(bulkTrips.length / itemsPerPage);
+    const currentTrips = bulkTrips.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
 
     if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
 
@@ -216,7 +226,11 @@ export default function CalculationsPage() {
                             </button>
                             <div className="min-w-0">
                                 <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Saved Calculations</h1>
-                                <p className="text-xs md:text-sm text-gray-400 font-medium mt-1">Manage all your agent mode budget plans</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-xs md:text-sm text-gray-400 font-medium">Manage all your agent mode budget plans</p>
+                                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                    <span className="text-xs font-bold text-[#10B17D] bg-[#10B17D]/10 px-2 py-0.5 rounded-full">{bulkTrips.length} Total</span>
+                                </div>
                             </div>
                         </div>
                         <button
@@ -250,86 +264,131 @@ export default function CalculationsPage() {
                             </button>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="border-b border-gray-50">
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tour Name</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tour Date</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tourists</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Spend</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Profit</th>
-                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-50">
-                                        {bulkTrips.map((tour) => {
-                                            const tourSpend = tour.expenses.reduce((sum, e) => sum + e.amount, 0);
-                                            const tourCollection = (tour.touristCount || 0) * (tour.feePerPerson || 0);
-                                            const tourProfit = tourCollection - tourSpend;
+                        <div className="space-y-6">
+                            <div className="bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="border-b border-gray-50">
+                                                <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tour Name</th>
+                                                <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center hidden md:table-cell">Tour Date</th>
+                                                <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tourists</th>
+                                                <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Tour Fee</th>
+                                                <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Spend</th>
+                                                <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Profit</th>
+                                                <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                            {currentTrips.map((tour) => {
+                                                const tourSpend = tour.expenses.reduce((sum, e) => sum + e.amount, 0);
+                                                const tourCollection = (tour.touristCount || 0) * (tour.feePerPerson || 0);
+                                                const tourProfit = tourCollection - tourSpend;
 
-                                            return (
-                                                <tr key={tour.id} className="group hover:bg-gray-50/50 transition-colors">
-                                                    <td className="py-5">
-                                                        <div className="flex items-center gap-2">
-                                                            {tour.status === 'completed' && <Lock size={14} className="text-amber-500 shrink-0" />}
-                                                            <span className="font-bold text-gray-900">{tour.name}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap">
-                                                        {formatDate(tour.startDate || '')} — {formatDate(tour.endDate || '')}
-                                                    </td>
-                                                    <td className="py-5 text-gray-600 font-medium text-center">{tour.touristCount || 0}</td>
-                                                    <td className="py-5 text-gray-600 font-bold text-right">৳{tourSpend.toLocaleString()}</td>
-                                                    <td className={`py-5 font-black text-right ${tourProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            {tourProfit >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                                                            ৳{tourProfit.toLocaleString()}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-5 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleToggleStatus(tour); }}
-                                                                className={`p-2 rounded-xl transition-all active:scale-90 cursor-pointer ${tour.status === 'completed' ? 'text-emerald-500 hover:bg-emerald-50' : 'text-amber-500 hover:bg-amber-50'}`}
-                                                                title={tour.status === 'completed' ? "Resume Calculation" : "End Calculation"}
-                                                            >
-                                                                {tour.status === 'completed' ? <Unlock size={16} /> : <Lock size={16} />}
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleEditTrip(tour); }}
-                                                                className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
-                                                            >
-                                                                <Edit2 size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleDeleteTrip(tour.id); }}
-                                                                className="p-2 text-gray-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
-                                                            >
-                                                                <Trash2 size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleCloneTrip(tour); }}
-                                                                className="p-2 text-gray-300 hover:text-blue-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
-                                                                title="Clone Calculation"
-                                                            >
-                                                                <Copy size={16} />
-                                                            </button>
-                                                            <Link
-                                                                href={`/bulk_calculation?tripId=${tour.id}`}
-                                                                className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
-                                                            >
-                                                                <ArrowRight size={18} />
-                                                            </Link>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                                                return (
+                                                    <tr
+                                                        key={tour.id}
+                                                        onClick={() => router.push(`/bulk_calculation?tripId=${tour.id}`)}
+                                                        className="group hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                                    >
+                                                        <td className="py-5">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                {tour.status === 'completed' && <Lock size={14} className="text-amber-500 shrink-0" />}
+                                                                <span className="font-bold text-gray-900">{tour.name}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap text-center hidden md:table-cell">
+                                                            {formatDate(tour.startDate || '')} — {formatDate(tour.endDate || '')}
+                                                        </td>
+                                                        <td className="py-5 text-gray-600 font-medium text-center">{tour.touristCount || 0}</td>
+                                                        <td className="py-5 text-gray-600 font-bold text-center">৳{(tour.feePerPerson || 0).toLocaleString()}</td>
+                                                        <td className="py-5 text-gray-600 font-bold text-center">৳{tourSpend.toLocaleString()}</td>
+                                                        <td className={`py-5 font-black text-center ${tourProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                {tourProfit >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                                                ৳{tourProfit.toLocaleString()}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-5 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleToggleStatus(tour); }}
+                                                                    className={`p-2 rounded-xl transition-all active:scale-90 cursor-pointer ${tour.status === 'completed' ? 'text-emerald-500 hover:bg-emerald-50' : 'text-amber-500 hover:bg-amber-50'}`}
+                                                                    title={tour.status === 'completed' ? "Resume Calculation" : "End Calculation"}
+                                                                >
+                                                                    {tour.status === 'completed' ? <Unlock size={16} /> : <Lock size={16} />}
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleEditTrip(tour); }}
+                                                                    className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                                >
+                                                                    <Edit2 size={16} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleDeleteTrip(tour.id); }}
+                                                                    className="p-2 text-gray-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleCloneTrip(tour); }}
+                                                                    className="p-2 text-gray-300 hover:text-blue-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                                    title="Clone Calculation"
+                                                                >
+                                                                    <Copy size={16} />
+                                                                </button>
+                                                                <div
+                                                                    onClick={(e) => { e.stopPropagation(); router.push(`/bulk_calculation?tripId=${tour.id}`); }}
+                                                                    className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                                >
+                                                                    <ArrowRight size={18} />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
+
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-4 py-4">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className={`p-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${currentPage === 1
+                                            ? 'text-gray-300 cursor-not-allowed'
+                                            : 'bg-white text-gray-600 hover:text-[#10B17D] hover:shadow-md shadow-sm cursor-pointer'
+                                            }`}
+                                    >
+                                        <ChevronRight size={18} className="rotate-180" />
+                                        Previous
+                                    </button>
+
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-bold text-gray-400">Page</span>
+                                        <span className="px-3 py-1 bg-[#10B17D]/10 text-[#10B17D] rounded-lg font-black text-sm">
+                                            {currentPage}
+                                        </span>
+                                        <span className="text-sm font-bold text-gray-400">of {totalPages}</span>
+                                    </div>
+
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className={`p-3 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${currentPage === totalPages
+                                            ? 'text-gray-300 cursor-not-allowed'
+                                            : 'bg-white text-gray-600 hover:text-[#10B17D] hover:shadow-md shadow-sm cursor-pointer'
+                                            }`}
+                                    >
+                                        Next
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
 
