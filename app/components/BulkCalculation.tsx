@@ -439,8 +439,15 @@ export default function BulkCalculation() {
 
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button
+                  onClick={() => router.push('/calculations')}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100/50 rounded-xl text-xs font-bold hover:bg-emerald-500 hover:text-white hover:shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-95 cursor-pointer"
+                >
+                  <ShieldCheck size={16} />
+                  <span>View All</span>
+                </button>
+                <button
                   onClick={handleNewCalculation}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-all cursor-pointer"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-600 border border-blue-100/50 rounded-xl text-xs font-bold hover:bg-blue-500 hover:text-white hover:shadow-lg hover:shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
                 >
                   <Plus size={16} />
                   <span>New</span>
