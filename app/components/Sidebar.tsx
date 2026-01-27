@@ -130,7 +130,7 @@ export const Sidebar = ({
                       >
                         <div className="flex items-center gap-3 truncate flex-1">
                           <div className={`w-2 h-2 rounded-full ${active ? 'bg-[#10B17D]' : 'bg-white/10'}`}></div>
-                          <span className="truncate font-medium text-xs">{trip.name}</span>
+                          <span className="truncate font-medium text-sm">{trip.name}</span>
                         </div>
 
                         <div className={`flex items-center gap-1 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>

@@ -63,7 +63,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/sign-in?mode=signup"
-                  className="px-5 py-2.5 font-bold rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 bg-[#10B17D] text-white hover:bg-[#0D8F65]"
+                  className="px-5 py-2.5 font-bold rounded-xl transition-all flex items-center gap-2 bg-[#10B17D] text-white hover:bg-[#0D8F65]"
                 >
                   Get Started <ArrowRight size={16} />
                 </Link>
@@ -104,7 +104,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/sign-in?mode=signup"
-                  className="w-full px-5 py-4 bg-[#10B17D] text-white font-bold rounded-2xl text-center shadow-lg shadow-[#10B17D]/20"
+                  className="w-full px-5 py-4 bg-[#10B17D] text-white font-bold rounded-2xl text-center"
                 >
                   Get Started
                 </Link>
@@ -155,7 +155,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             <Link
               href={session ? "/dashboard" : "/sign-in?mode=signup"}
-              className="w-full sm:w-auto px-10 py-5 bg-[#10B17D] text-white font-bold rounded-2xl hover:bg-[#0D8F65] hover:scale-105 transition-all shadow-xl hover:shadow-[#10B17D]/30 flex items-center justify-center gap-3 text-lg"
+              className="w-full sm:w-auto px-10 py-5 bg-[#10B17D] text-white font-bold rounded-2xl hover:bg-[#0D8F65] hover:scale-105 transition-all flex items-center justify-center gap-3 text-lg"
             >
               {session ? "Go to Dashboard" : "Start Tracking Free"}
             </Link>
@@ -296,7 +296,7 @@ export default function LandingPage() {
             </div>
             <Link
               href="/sign-in?mode=signup"
-              className="w-full md:w-auto px-10 py-4 bg-[#10B17D] hover:bg-[#0D8F65] rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#10B17D]/20 hover:shadow-[#10B17D]/40 active:scale-95"
+              className="w-full md:w-auto px-10 py-4 bg-[#10B17D] hover:bg-[#0D8F65] rounded-2xl font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
             >
               Start Your Journey <ArrowRight size={18} />
             </Link>

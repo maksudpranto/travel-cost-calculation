@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Map as MapIcon, Loader2, ArrowLeft } from "lucide-react";
+import { Map as MapIcon, Loader2, ArrowLeft, ChevronRight } from "lucide-react";
 
 function SignInContent() {
     const router = useRouter();
@@ -14,6 +14,7 @@ function SignInContent() {
     const [isSignUp, setIsSignUp] = useState(false);
     const [identifier, setIdentifier] = useState(""); // Email or Phone
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [name, setName] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -30,6 +31,12 @@ function SignInContent() {
         e.preventDefault();
         setLoading(true);
         setError("");
+
+        if (isSignUp && password !== confirmPassword) {
+            setError("Passwords do not match");
+            setLoading(false);
+            return;
+        }
 
         try {
             if (isSignUp) {
@@ -97,166 +104,130 @@ function SignInContent() {
         }
     };
 
+    const inputWrapperStyle = "space-y-2";
+    const labelStyle = "text-[11px] font-bold text-[#10B17D] uppercase tracking-wider ml-1";
+    const inputStyle = "w-full h-14 bg-[#1A1A1A] border border-[#10B17D]/50 rounded-2xl px-6 text-white placeholder-gray-600 focus:ring-2 focus:ring-[#10B17D]/30 transition-all font-bold";
+
     return (
-        <div className="min-h-screen flex font-sans selection:bg-[#10B17D] selection:text-white relative overflow-hidden">
-            {/* Background Image */}
-            <div className="absolute inset-0 z-0">
+        <div className="min-h-screen bg-[#111111] font-sans selection:bg-[#10B17D] selection:text-white flex flex-col lg:flex-row relative overflow-hidden">
+
+            {/* Left Section: Form */}
+            <div className="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 lg:px-24 py-12 relative z-10 bg-[#111111]">
+                <div className="w-full max-w-lg">
+                    {/* Top Navigation / Logo */}
+                    <div className="flex items-center justify-between mb-16 lg:mb-24">
+                        <Link href="/" className="flex items-center gap-2 group">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#10B17D] rounded-full flex items-center justify-center text-white shadow-lg shadow-[#10B17D]/20 transition-transform duration-500 group-hover:scale-110">
+                                <MapIcon size={20} strokeWidth={2.5} />
+                            </div>
+                            <span className="text-lg sm:text-xl font-black text-white tracking-tight">TravelCost<span className="text-[#10B17D]">.</span></span>
+                        </Link>
+                        <nav className="flex items-center gap-6 sm:gap-10">
+                            <Link href="/" className="text-sm font-bold text-gray-400 hover:text-white transition-colors">Home</Link>
+                        </nav>
+                    </div>
+
+                    {/* Header */}
+                    <div className="mb-10 text-left">
+                        <p className="text-[10px] font-black text-[#10B17D] uppercase tracking-[0.3em] mb-4">
+                            {isSignUp ? "Start for free" : "Welcome back"}
+                        </p>
+                        <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tighter mb-4">
+                            {isSignUp ? "Create new account" : "Sign in to account"}<span className="text-[#10B17D]">.</span>
+                        </h1>
+                        <p className="text-sm sm:text-base text-gray-400 font-bold">
+                            {isSignUp ? "Already a Member?" : "New to TravelCost?"}{" "}
+                            <button
+                                onClick={() => { setIsSignUp(!isSignUp); setError(""); }}
+                                className="text-[#10B17D] hover:underline cursor-pointer"
+                            >
+                                {isSignUp ? "Log In" : "Sign Up"}
+                            </button>
+                        </p>
+                    </div>
+
+                    {/* Auth Form */}
+                    <form className="space-y-6" onSubmit={handleSubmit}>
+                        {isSignUp && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className={inputWrapperStyle}>
+                                    <label className={labelStyle}>First name</label>
+                                    <input required type="text" placeholder="Michał" value={name.split(' ')[0]} onChange={(e) => setName(e.target.value + (name.split(' ')[1] ? ' ' + name.split(' ')[1] : ''))} className={inputStyle} />
+                                </div>
+                                <div className={inputWrapperStyle}>
+                                    <label className={labelStyle}>Last name</label>
+                                    <input type="text" placeholder="Masiak" value={name.split(' ')[1] || ''} onChange={(e) => setName((name.split(' ')[0] || '') + ' ' + e.target.value)} className={inputStyle} />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={inputWrapperStyle}>
+                            <label className={labelStyle}>Email / Phone</label>
+                            <input required type="text" placeholder="you@anywhere.co" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className={inputStyle} />
+                        </div>
+
+                        <div className={inputWrapperStyle}>
+                            <label className={labelStyle}>Password</label>
+                            <input required type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className={inputStyle} />
+                        </div>
+
+                        {isSignUp && (
+                            <div className={inputWrapperStyle}>
+                                <label className={labelStyle}>Confirm Password</label>
+                                <input required type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputStyle} />
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-500 font-bold animate-in fade-in slide-in-from-top-2">
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="pt-4">
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full h-16 bg-[#10B17D] text-white font-black rounded-[22px] hover:bg-[#0D8F65] transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isSignUp ? "Create account" : "Sign in")}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {/* Right Section: Image with Wavy Divider */}
+            <div className="hidden lg:block relative flex-1 bg-[#111111]">
+                {/* Wavy Mask Overlay */}
+                <div className="absolute inset-y-0 left-0 w-32 bg-[#111111] z-20" style={{
+                    clipPath: "polygon(0 0, 100% 0, 0 100%)",
+                }} />
+
+                <div className="absolute inset-0 bg-black/20 z-10" />
+
                 <Image
                     src="/new_hero_bg.png"
-                    alt="Background"
+                    alt="Travel"
                     fill
                     className="object-cover"
                     quality={100}
                     priority
                 />
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-            </div>
 
-            {/* Content Container */}
-            <div className="relative z-10 w-full min-h-screen flex flex-col">
+                {/* SVG Divider for organic look */}
+                <svg className="absolute inset-y-0 left-[-1px] h-full w-48 z-20 text-[#111111] fill-current" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <path d="M0 0 C 30 20, 70 20, 100 0 L 100 100 C 70 80, 30 80, 0 100 Z" transform="rotate(90 50 50)" />
+                </svg>
 
-                {/* Top Header for Back Button */}
-                <div className="w-full p-4 sm:p-8 flex items-center justify-start pointer-events-none">
-                    <Link
-                        href="/"
-                        className="group flex items-center justify-center text-white/80 hover:text-white transition-colors cursor-pointer pointer-events-auto"
-                    >
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg group-hover:bg-white/20 group-hover:scale-105 transition-all duration-300">
-                            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+                {/* Bottom Logo Link */}
+                <div className="absolute bottom-12 right-12 z-30">
+                    <Link href="/" className="flex items-center gap-3 opacity-90 hover:opacity-100 transition-opacity">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#111111] font-black">
+                            <MapIcon size={24} />
                         </div>
+                        <span className="text-2xl font-black text-white tracking-widest uppercase">AW<span className="text-[#10B17D]">.</span></span>
                     </Link>
-                </div>
-
-                {/* Modal Container - Perfectly Centered */}
-                <div className="flex-1 flex flex-col justify-center items-center px-4 pb-12 sm:pb-24">
-                    <div className="w-full max-w-md">
-                        {/* Glassmorphism Card */}
-                        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40">
-                            <div className="px-6 sm:px-10 py-10">
-                                {/* Header */}
-                                <div className="text-center mb-10">
-                                    <Link href="/" className="inline-flex justify-center items-center gap-3 mb-6 group">
-                                        <div className="w-12 h-12 bg-[#10B17D] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#10B17D]/20 group-hover:scale-105 transition-transform duration-300">
-                                            <MapIcon size={24} />
-                                        </div>
-                                        <span className="text-2xl font-black tracking-tight text-gray-900">TravelCost</span>
-                                    </Link>
-                                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-                                        {isSignUp ? "Create Account" : "Welcome Back"}
-                                    </h2>
-                                    <p className="mt-2 text-sm text-gray-500 font-medium">
-                                        {isSignUp ? "Join us to plan your next adventure" : "Sign in to access your trips"}
-                                    </p>
-                                </div>
-
-                                {/* Sign Up Mode Toggle */}
-                                {isSignUp && (
-                                    <div className="flex bg-gray-100/50 p-1 rounded-xl mb-8 relative" role="group">
-                                        <button
-                                            type="button"
-                                            onClick={() => { setUsePhone(false); setIdentifier(""); }}
-                                            className={`flex-1 flex items-center justify-center py-2.5 text-xs font-bold rounded-lg transition-all duration-300 cursor-pointer ${!usePhone ? 'bg-[#10B17D] text-white shadow-md' : 'text-gray-400 hover:text-gray-900'}`}
-                                        >
-                                            Use Email
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => { setUsePhone(true); setIdentifier(""); }}
-                                            className={`flex-1 flex items-center justify-center py-2.5 text-xs font-bold rounded-lg transition-all duration-300 cursor-pointer ${usePhone ? 'bg-[#10B17D] text-white shadow-md' : 'text-gray-400 hover:text-gray-900'}`}
-                                        >
-                                            Use Phone
-                                        </button>
-                                    </div>
-                                )}
-
-                                <form className="space-y-5" onSubmit={handleSubmit}>
-                                    {isSignUp && (
-                                        <div className="space-y-1.5">
-                                            <label htmlFor="name" className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">
-                                                Full Name
-                                            </label>
-                                            <input
-                                                id="name"
-                                                name="name"
-                                                type="text"
-                                                required={isSignUp}
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                                placeholder="John Doe"
-                                                className="block w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#10B17D] transition-all duration-200 sm:text-sm"
-                                            />
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-1.5">
-                                        <label htmlFor="identifier" className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">
-                                            {isSignUp ? (usePhone ? "Phone Number" : "Email Address") : "Email or Phone Number"}
-                                        </label>
-                                        <input
-                                            id="identifier"
-                                            name="identifier"
-                                            type={isSignUp ? (usePhone ? "tel" : "email") : "text"}
-                                            autoComplete={isSignUp ? (usePhone ? "tel" : "email") : "username"}
-                                            required
-                                            value={identifier}
-                                            onChange={(e) => setIdentifier(e.target.value)}
-                                            placeholder={isSignUp ? (usePhone ? "+1 (555) 000-0000" : "you@example.com") : "Enter your email or phone"}
-                                            className="block w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#10B17D] transition-all duration-200 sm:text-sm"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label htmlFor="password" className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">
-                                            Password
-                                        </label>
-                                        <input
-                                            id="password"
-                                            name="password"
-                                            type="password"
-                                            autoComplete={isSignUp ? "new-password" : "current-password"}
-                                            required
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            className="block w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#10B17D] transition-all duration-200 sm:text-sm"
-                                        />
-                                    </div>
-
-                                    {error && (
-                                        <div className="rounded-xl bg-red-50 p-4 border border-red-100 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <div className="text-sm text-red-700 font-bold">
-                                                {error}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="w-full h-14 flex justify-center items-center px-4 rounded-xl shadow-lg shadow-[#10B17D]/20 text-sm font-black text-white bg-[#10B17D] hover:bg-[#0D8F65] hover:shadow-xl hover:shadow-[#10B17D]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer transform active:scale-[0.98]"
-                                    >
-                                        {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isSignUp ? "Create Account" : "Sign In")}
-                                    </button>
-                                </form>
-                            </div>
-
-                            <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-center">
-                                <p className="text-sm text-gray-500 font-medium">
-                                    {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-                                    <button
-                                        onClick={() => {
-                                            setIsSignUp(!isSignUp);
-                                            setError("");
-                                            setUsePhone(false);
-                                        }}
-                                        className="font-black text-[#10B17D] hover:text-[#0D8F65] transition-colors cursor-pointer ml-1"
-                                    >
-                                        {isSignUp ? "Sign In" : "Sign Up"}
-                                    </button>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
