@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Menu, Map as MapIcon, Calendar, Users, Receipt, ArrowUp, ChevronRight, Edit2, Trash2, Wallet, ShieldCheck } from "lucide-react";
+import { Plus, Menu, Map as MapIcon, Calendar, Users, Receipt, ArrowUp, ChevronRight, Edit2, Trash2, Wallet, ShieldCheck, Lock, Unlock, Copy } from "lucide-react";
 import { Sidebar } from '../components/Sidebar';
-import { AddModal, DeleteConfirmModal } from '../components/Modals';
+import { AddModal, DeleteConfirmModal, ConfirmModal } from '../components/Modals';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { Trip } from '../type';
-import { TripListItem } from '../components/TripListItem';
 
 export default function TripsPage() {
     const { data: session } = authClient.useSession();
@@ -20,6 +19,8 @@ export default function TripsPage() {
     const [modalType, setModalType] = useState<'trip' | 'profile' | 'bulk_trip'>('trip');
     const [editingItem, setEditingItem] = useState<any>(null);
     const [itemToDelete, setItemToDelete] = useState<{ type: 'trip', id: number } | null>(null);
+    const [toggleModalOpen, setToggleModalOpen] = useState(false);
+    const [tripToToggle, setTripToToggle] = useState<Trip | null>(null);
 
     const fetchTrips = async () => {
         try {
@@ -64,6 +65,29 @@ export default function TripsPage() {
         setItemToDelete(null);
     };
 
+    const handleToggleStatus = (trip: Trip) => {
+        setTripToToggle(trip);
+        setToggleModalOpen(true);
+    };
+
+    const confirmToggleStatus = async () => {
+        if (!tripToToggle) return;
+        const newStatus: 'active' | 'completed' = tripToToggle.status === 'completed' ? 'active' : 'completed';
+        const updatedTrip = { ...tripToToggle, status: newStatus };
+
+        // Optimistic Update
+        setTrips(trips.map(t => t.id === tripToToggle.id ? updatedTrip : t));
+        setToggleModalOpen(false);
+
+        // API Update
+        await fetch(`/api/trips/${tripToToggle.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTrip)
+        });
+        setTripToToggle(null);
+    };
+
     const handleSave = async (data: any) => {
         if (modalType === 'profile') {
             await authClient.updateUser({ name: data.name, image: data.image });
@@ -91,6 +115,27 @@ export default function TripsPage() {
         setModalOpen(false);
     };
 
+    const handleCloneTrip = async (trip: Trip) => {
+        const newTrip = {
+            ...trip,
+            id: Date.now(),
+            name: `${trip.name} (Copy)`,
+            status: 'active' as 'active' | 'completed',
+            people: trip.people.map(p => ({ ...p })), // Deep copy people if strict
+            expenses: trip.expenses.map(e => ({ ...e })) // Deep copy expenses if strict
+        };
+
+        // Optimistic Update
+        setTrips([...trips, newTrip]);
+
+        // API Create
+        await fetch("/api/trips", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTrip)
+        });
+    };
+
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'N/A';
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -116,6 +161,17 @@ export default function TripsPage() {
         <div className="flex min-h-screen bg-[#FAFAFA] font-sans text-gray-900 selection:bg-[#10B17D]/10 selection:text-[#10B17D]">
             <AddModal isOpen={modalOpen} onClose={() => setModalOpen(false)} type={modalType} onSave={handleSave} initialData={editingItem} />
             <DeleteConfirmModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} title="Delete Trip?" message="This will delete the trip and all its data." />
+            <ConfirmModal
+                isOpen={toggleModalOpen}
+                onClose={() => setToggleModalOpen(false)}
+                onConfirm={confirmToggleStatus}
+                title={tripToToggle?.status === 'completed' ? "Resume Trip?" : "End Trip?"}
+                message={tripToToggle?.status === 'completed'
+                    ? "This will reopen the trip for new expenses and modifications."
+                    : "This will mark the trip as completed and lock it from new expenses."}
+                confirmText={tripToToggle?.status === 'completed' ? "Resume Journey" : "Complete Trip"}
+                variant={tripToToggle?.status === 'completed' ? 'success' : 'warning'}
+            />
 
             <Sidebar
                 trips={trips}
@@ -184,22 +240,88 @@ export default function TripsPage() {
                             </button>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            {/* Table Header */}
-                            <div className="hidden sm:flex items-center gap-6 px-4 py-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100 mb-2">
-                                <div className="w-12 text-center">#</div>
-                                <div className="flex-1">Trip Details</div>
-                                <div className="flex items-center sm:w-44">
-                                    <div className="w-24 text-right">Spent</div>
-                                    <div className="w-20 text-right">People</div>
-                                </div>
-                                <div className="w-[140px] ml-4 text-right">Actions</div>
-                            </div>
-
-                            <div className="flex flex-col gap-4">
-                                {trips.filter(t => t.type !== 'bulk').map(trip => (
-                                    <TripListItem key={trip.id} trip={trip} onEdit={handleEditTrip} onDelete={handleDeleteTrip} router={router} formatDate={formatDate} />
-                                ))}
+                        <div className="bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="border-b border-gray-50">
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest pl-4">#</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Trip Details</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tour Date</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Spent</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">People</th>
+                                            <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right pr-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {trips.filter(t => t.type !== 'bulk').map((trip, idx) => {
+                                            const totalSpent = trip.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+                                            return (
+                                                <tr key={trip.id} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => router.push(`/dashboard?tripId=${trip.id}`)}>
+                                                    <td className="py-5 pl-4">
+                                                        <span className="text-[10px] font-mono font-bold text-gray-300">{(idx + 1).toString().padStart(2, '0')}</span>
+                                                    </td>
+                                                    <td className="py-5">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-xl bg-[#10B17D]/10 text-[#10B17D] flex items-center justify-center transition-transform group-hover:scale-110">
+                                                                <MapIcon size={20} />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-gray-900 flex items-center gap-2">
+                                                                    {trip.status === 'completed' && <Lock size={14} className="text-amber-500 shrink-0" />}
+                                                                    {trip.name}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-5 text-[11px] font-bold text-gray-500 whitespace-nowrap">
+                                                        <div className="flex items-center gap-2">
+                                                            <Calendar size={14} className="text-[#10B17D]" />
+                                                            <span>{formatDate(trip.startDate || '')} — {formatDate(trip.endDate || '')}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-5 text-gray-900 font-bold text-right">৳{totalSpent.toLocaleString()}</td>
+                                                    <td className="py-5 text-gray-500 font-medium text-center">{trip.people.length}</td>
+                                                    <td className="py-5 text-right pr-4">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleToggleStatus(trip); }}
+                                                                className={`p-2 rounded-xl transition-all active:scale-90 cursor-pointer ${trip.status === 'completed' ? 'text-emerald-500 hover:bg-emerald-50' : 'text-amber-500 hover:bg-amber-50'}`}
+                                                                title={trip.status === 'completed' ? "Resume Trip" : "End Trip"}
+                                                            >
+                                                                {trip.status === 'completed' ? <Unlock size={16} /> : <Lock size={16} />}
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleEditTrip(trip); }}
+                                                                className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                                title="Edit Trip"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDeleteTrip(trip.id); }}
+                                                                className="p-2 text-gray-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                                title="Delete Trip"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleCloneTrip(trip); }}
+                                                                className="p-2 text-gray-300 hover:text-blue-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                                title="Clone Trip"
+                                                            >
+                                                                <Copy size={16} />
+                                                            </button>
+                                                            <div className="p-2 text-gray-300 group-hover:text-[#10B17D] transition-colors">
+                                                                <ChevronRight size={18} />
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}

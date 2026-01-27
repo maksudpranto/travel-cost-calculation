@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 // --- IMPORTANT: UPDATED IMPORTS (added ../) ---
 import { Trip } from '../type';
 import { Sidebar } from '../components/Sidebar';
-import { AddModal, DeleteConfirmModal } from '../components/Modals';
+import { AddModal, DeleteConfirmModal, ConfirmModal } from '../components/Modals';
 import { PeopleCard } from '../components/PeopleCard';
 import { ExpensesCard } from '../components/ExpensesCard';
 import { BalancesCard } from '../components/BalancesCard';
@@ -91,6 +91,7 @@ function DashboardContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip', id: number } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
 
   // --- CALCULATIONS ---
   const stats = useMemo(() => {
@@ -149,13 +150,19 @@ function DashboardContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleToggleStatus = async () => {
+  const handleToggleStatus = () => {
+    if (!activeTrip) return;
+    setIsToggleModalOpen(true);
+  };
+
+  const confirmToggleStatus = async () => {
     if (!activeTrip) return;
     const newStatus: 'active' | 'completed' = activeTrip.status === 'completed' ? 'active' : 'completed';
     const updatedTrip = { ...activeTrip, status: newStatus };
 
     // Optimistic Update
     setTrips(trips.map(t => t.id === activeTripId ? updatedTrip : t));
+    setIsToggleModalOpen(false);
 
     // API Update
     const res = await fetch(`/api/trips/${activeTrip.id}`, {
@@ -315,6 +322,17 @@ function DashboardContent() {
       <style>{globalStyles}</style>
       <AddModal isOpen={modalOpen} onClose={() => setModalOpen(false)} type={modalType} onSave={saveData} initialData={editingItem} />
       <DeleteConfirmModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} title={itemToDelete?.type === 'trip' ? "Delete Trip?" : "Are you sure?"} message={itemToDelete?.type === 'trip' ? "This will delete the trip and all data." : undefined} />
+      <ConfirmModal
+        isOpen={isToggleModalOpen}
+        onClose={() => setIsToggleModalOpen(false)}
+        onConfirm={confirmToggleStatus}
+        title={activeTrip?.status === 'completed' ? "Resume Trip?" : "End Trip?"}
+        message={activeTrip?.status === 'completed'
+          ? "This will reopen the trip for new expenses and modifications."
+          : "This will mark the trip as completed and lock it from new expenses."}
+        confirmText={activeTrip?.status === 'completed' ? "Resume Journey" : "Complete Trip"}
+        variant={activeTrip?.status === 'completed' ? 'success' : 'warning'}
+      />
 
       {/* --- BACK TO TOP BUTTON --- */}
       <button

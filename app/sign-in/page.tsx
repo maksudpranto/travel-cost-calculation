@@ -18,6 +18,7 @@ function SignInContent() {
     const [name, setName] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
     const [usePhone, setUsePhone] = useState(false); // Only for explicit Sign Up toggle
 
     useEffect(() => {
@@ -48,7 +49,13 @@ function SignInContent() {
                         name,
                         username: identifier, // Phone number as username
                     }, {
-                        onSuccess: () => router.push("/dashboard"),
+                        onSuccess: () => {
+                            setIsSignUp(false);
+                            setSuccessMessage("Account created successfully! Please sign in.");
+                            setPassword("");
+                            setConfirmPassword("");
+                            setLoading(false);
+                        },
                         onError: (ctx: any) => {
                             setError(ctx.error.message);
                             setLoading(false);
@@ -62,7 +69,13 @@ function SignInContent() {
                         name,
                         username: identifier.split('@')[0], // Optional username generation
                     }, {
-                        onSuccess: () => router.push("/dashboard"),
+                        onSuccess: () => {
+                            setIsSignUp(false);
+                            setSuccessMessage("Account created successfully! Please sign in.");
+                            setPassword("");
+                            setConfirmPassword("");
+                            setLoading(false);
+                        },
                         onError: (ctx: any) => {
                             setError(ctx.error.message);
                             setLoading(false);
@@ -138,7 +151,7 @@ function SignInContent() {
                         <p className="text-sm sm:text-base text-gray-400 font-bold">
                             {isSignUp ? "Already a Member?" : "New to TravelCost?"}{" "}
                             <button
-                                onClick={() => { setIsSignUp(!isSignUp); setError(""); }}
+                                onClick={() => { setIsSignUp(!isSignUp); setError(""); setSuccessMessage(""); }}
                                 className="text-[#10B17D] hover:underline cursor-pointer"
                             >
                                 {isSignUp ? "Log In" : "Sign Up"}
@@ -181,6 +194,12 @@ function SignInContent() {
                         {error && (
                             <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-500 font-bold animate-in fade-in slide-in-from-top-2">
                                 {error}
+                            </div>
+                        )}
+
+                        {successMessage && !isSignUp && (
+                            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-500 font-bold animate-in fade-in slide-in-from-top-2">
+                                {successMessage}
                             </div>
                         )}
 

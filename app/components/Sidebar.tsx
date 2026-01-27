@@ -50,7 +50,7 @@ export const Sidebar = ({
     }
     if (label === 'Ongoing Group Tours') {
       if (pathname === '/calculations') return false; // Let "All Group Tours" handle it
-      return pathname === '/bulk_calculation';
+      return pathname === '/bulk_calculation' && (!activeTripId || activeTripId === 0);
     }
 
     // Exact match for other items

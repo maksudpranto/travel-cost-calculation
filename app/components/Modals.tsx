@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, User, FileText, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
+import { X, User, FileText, Calendar as CalendarIcon, ChevronDown, CheckCircle2, AlertCircle, Play, PauseCircle } from 'lucide-react';
 
 interface AddModalProps {
   isOpen: boolean;
@@ -394,7 +394,7 @@ export const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confi
     <div className="fixed inset-0 bg-black/60 backdrop-blur-xl flex items-center justify-center p-4 z-50 transition-all duration-500">
       <div className="bg-white rounded-[28px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] w-full max-w-lg p-12 animate-in fade-in zoom-in duration-500 border border-white/40">
         <div className={`w-20 h-20 ${style.bg} ${style.text} rounded-[28px] flex items-center justify-center mb-8 shadow-sm`}>
-          <FileText size={40} strokeWidth={3} />
+          {variant === 'success' ? <CheckCircle2 size={40} strokeWidth={3} /> : variant === 'warning' ? <AlertCircle size={40} strokeWidth={3} /> : <FileText size={40} strokeWidth={3} />}
         </div>
         <h3 className="text-3xl font-black text-gray-900 mb-4 tracking-tighter leading-tight">{title}</h3>
         <p className="text-base font-bold text-gray-400 mb-12 leading-relaxed">{message}</p>

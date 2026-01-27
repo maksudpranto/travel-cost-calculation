@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Menu, LayoutDashboard, ShieldCheck, ChevronRight, Edit2, Trash2, TrendingUp, TrendingDown, ArrowRight, Clock, Lock } from "lucide-react";
+import { Plus, Menu, LayoutDashboard, ShieldCheck, ChevronRight, Edit2, Trash2, TrendingUp, TrendingDown, ArrowRight, Clock, Lock, Copy, Unlock } from "lucide-react";
 import { Sidebar } from '../components/Sidebar';
-import { AddModal, DeleteConfirmModal } from '../components/Modals';
+import { AddModal, DeleteConfirmModal, ConfirmModal } from '../components/Modals';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Trip } from '../type';
-import { TripListItem } from '../components/TripListItem';
 
 export default function CalculationsPage() {
     const { data: session } = authClient.useSession();
@@ -21,6 +20,8 @@ export default function CalculationsPage() {
     const [modalType, setModalType] = useState<'trip' | 'profile' | 'bulk_trip'>('trip');
     const [editingItem, setEditingItem] = useState<any>(null);
     const [itemToDelete, setItemToDelete] = useState<{ type: 'trip', id: number } | null>(null);
+    const [toggleModalOpen, setToggleModalOpen] = useState(false);
+    const [tripToToggle, setTripToToggle] = useState<Trip | null>(null);
 
     const fetchTrips = async () => {
         try {
@@ -58,6 +59,29 @@ export default function CalculationsPage() {
         setTrips(trips.filter(t => t.id !== itemToDelete.id));
         await fetch(`/api/trips/${itemToDelete.id}`, { method: 'DELETE' });
         setItemToDelete(null);
+    };
+
+    const handleToggleStatus = (trip: Trip) => {
+        setTripToToggle(trip);
+        setToggleModalOpen(true);
+    };
+
+    const confirmToggleStatus = async () => {
+        if (!tripToToggle) return;
+        const newStatus: 'active' | 'completed' = tripToToggle.status === 'completed' ? 'active' : 'completed';
+        const updatedTrip = { ...tripToToggle, status: newStatus };
+
+        // Optimistic Update
+        setTrips(trips.map(t => t.id === tripToToggle.id ? updatedTrip : t));
+        setToggleModalOpen(false);
+
+        // API Update
+        await fetch(`/api/trips/${tripToToggle.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTrip)
+        });
+        setTripToToggle(null);
     };
 
     const handleSave = async (data: any) => {
@@ -109,6 +133,26 @@ export default function CalculationsPage() {
         setEditingItem(null);
     };
 
+    const handleCloneTrip = async (trip: Trip) => {
+        const newTrip = {
+            ...trip,
+            id: Date.now(),
+            name: `${trip.name} (Copy)`,
+            status: 'active' as 'active' | 'completed',
+            expenses: trip.expenses.map(e => ({ ...e }))
+        };
+
+        // Optimistic Update
+        setTrips([...trips, newTrip]);
+
+        // API Create
+        await fetch("/api/trips", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTrip)
+        });
+    };
+
     const formatDate = (dateStr: string) => {
         if (!dateStr) return 'N/A';
         return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -123,6 +167,17 @@ export default function CalculationsPage() {
         <div className="flex min-h-screen bg-[#FDFDFD] font-sans text-gray-900">
             <AddModal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingItem(null); }} type={modalType} onSave={handleSave} initialData={editingItem} />
             <DeleteConfirmModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} title="Delete Calculation?" message="This will permanently remove this saved calculation." />
+            <ConfirmModal
+                isOpen={toggleModalOpen}
+                onClose={() => setToggleModalOpen(false)}
+                onConfirm={confirmToggleStatus}
+                title={tripToToggle?.status === 'completed' ? "Resume Calculation?" : "End Calculation?"}
+                message={tripToToggle?.status === 'completed'
+                    ? "This will reopen the calculation for modifications."
+                    : "This will mark the calculation as completed."}
+                confirmText={tripToToggle?.status === 'completed' ? "Resume" : "Complete"}
+                variant={tripToToggle?.status === 'completed' ? 'success' : 'warning'}
+            />
 
             <Sidebar
                 trips={trips}
@@ -236,6 +291,13 @@ export default function CalculationsPage() {
                                                     <td className="py-5 text-right">
                                                         <div className="flex items-center justify-end gap-2">
                                                             <button
+                                                                onClick={(e) => { e.stopPropagation(); handleToggleStatus(tour); }}
+                                                                className={`p-2 rounded-xl transition-all active:scale-90 cursor-pointer ${tour.status === 'completed' ? 'text-emerald-500 hover:bg-emerald-50' : 'text-amber-500 hover:bg-amber-50'}`}
+                                                                title={tour.status === 'completed' ? "Resume Calculation" : "End Calculation"}
+                                                            >
+                                                                {tour.status === 'completed' ? <Unlock size={16} /> : <Lock size={16} />}
+                                                            </button>
+                                                            <button
                                                                 onClick={(e) => { e.stopPropagation(); handleEditTrip(tour); }}
                                                                 className="p-2 text-gray-300 hover:text-[#10B17D] hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
                                                             >
@@ -246,6 +308,13 @@ export default function CalculationsPage() {
                                                                 className="p-2 text-gray-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
                                                             >
                                                                 <Trash2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleCloneTrip(tour); }}
+                                                                className="p-2 text-gray-300 hover:text-blue-500 hover:bg-white rounded-xl shadow-sm border border-transparent hover:border-gray-100 transition-all inline-flex"
+                                                                title="Clone Calculation"
+                                                            >
+                                                                <Copy size={16} />
                                                             </button>
                                                             <Link
                                                                 href={`/bulk_calculation?tripId=${tour.id}`}

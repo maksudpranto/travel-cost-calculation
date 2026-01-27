@@ -414,12 +414,13 @@ export default function BulkCalculation() {
       <ConfirmModal
         isOpen={showStatusModal}
         onClose={() => setShowStatusModal(false)}
-        onConfirm={() => handleToggleStatus('completed')}
-        title="End Group Tour?"
-        message="This will lock all input fields and expenses. You can reopen it later if needed."
-        confirmText="End Tour"
-        cancelText="Keep Editing"
-        variant="warning"
+        onConfirm={() => handleToggleStatus(tourStatus === 'completed' ? 'active' : 'completed')}
+        title={tourStatus === 'completed' ? "Reopen Tour?" : "End Group Tour?"}
+        message={tourStatus === 'completed'
+          ? "This will reopen the calculation for new expenses and modifications."
+          : "This will lock all input fields and expenses. You can reopen it later if needed."}
+        confirmText={tourStatus === 'completed' ? "Reopen Now" : "End Tour"}
+        variant={tourStatus === 'completed' ? 'success' : 'warning'}
       />
 
       <Sidebar
@@ -529,11 +530,7 @@ export default function BulkCalculation() {
                 {currentTripId && (
                   <button
                     onClick={() => {
-                      if (tourStatus === 'active') {
-                        setShowStatusModal(true);
-                      } else {
-                        handleToggleStatus('active');
-                      }
+                      setShowStatusModal(true);
                     }}
                     className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${tourStatus === 'completed' ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-amber-200' : 'bg-rose-500 text-white hover:bg-rose-600 shadow-rose-200'} shadow-lg`}
                   >
