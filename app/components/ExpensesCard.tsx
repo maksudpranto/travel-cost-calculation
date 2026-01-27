@@ -25,7 +25,7 @@ export const ExpensesCard = ({ expenses, onAdd, onEdit, onDelete }: ExpensesCard
         <h3 className="text-lg font-bold text-gray-800">Expenses</h3>
         <button
           onClick={onAdd}
-          className="cursor-pointer flex items-center gap-2 text-sm font-medium bg-[#FA5C5C] text-white hover:bg-[#D43E3E] px-6 py-2 rounded-lg shadow-sm transition-all hover:shadow-lg active:scale-95"
+          className="cursor-pointer flex items-center gap-2 text-sm font-bold bg-[#10B17D] text-white hover:bg-[#0D8F65] px-6 py-2.5 rounded-xl shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
         >
           <Plus size={16} /> Add
         </button>

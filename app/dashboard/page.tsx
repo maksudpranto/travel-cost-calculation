@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Download, Menu, Map, Calculator, ArrowUp, Calendar } from "lucide-react";
-import Link from 'next/link';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import { Plus, Download, Menu, Map, ArrowUp, Calendar } from "lucide-react";
 import { authClient } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
-
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // --- IMPORTANT: UPDATED IMPORTS (added ../) ---
 import { Trip } from '../type';
@@ -15,7 +13,7 @@ import { PeopleCard } from '../components/PeopleCard';
 import { ExpensesCard } from '../components/ExpensesCard';
 import { BalancesCard } from '../components/BalancesCard';
 import { SummaryGrid } from '../components/SummaryGrid';
-// ... (Rest of the Dashboard code remains exactly the same) ...
+import { DashboardCharts } from '../components/DashboardCharts';
 
 const globalStyles = `
   input[type=number]::-webkit-inner-spin-button,
@@ -27,10 +25,11 @@ const globalStyles = `
   html { scroll-behavior: smooth; }
 `;
 
-export default function Dashboard() {
+function DashboardContent() {
   const { data: session } = authClient.useSession();
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const tripIdParam = searchParams.get('tripId');
 
   // --- APP STATE ---
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -51,8 +50,12 @@ export default function Dashboard() {
         const data = await res.json();
         setTrips(data);
         setIsLoaded(true);
-        if (data.length > 0 && activeTripId === 0) {
-          setActiveTripId(data[0].id);
+        if (data.length > 0) {
+          if (tripIdParam) {
+            setActiveTripId(Number(tripIdParam));
+          } else if (activeTripId === 0) {
+            setActiveTripId(data[0].id);
+          }
         }
       }
     } catch (error) {
@@ -68,7 +71,7 @@ export default function Dashboard() {
     } else {
       setIsLoading(false);
     }
-  }, [session]);
+  }, [session, tripIdParam]);
 
 
   // --- SCROLL LISTENER ---
@@ -274,7 +277,7 @@ export default function Dashboard() {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900">
+    <div className="flex min-h-screen bg-[#FDFDFD] font-sans text-gray-900">
       <style>{globalStyles}</style>
       <AddModal isOpen={modalOpen} onClose={() => setModalOpen(false)} type={modalType} onSave={saveData} initialData={editingItem} />
       <DeleteConfirmModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} title={itemToDelete?.type === 'trip' ? "Delete Trip?" : "Are you sure?"} message={itemToDelete?.type === 'trip' ? "This will delete the trip and all data." : undefined} />
@@ -282,7 +285,7 @@ export default function Dashboard() {
       {/* --- BACK TO TOP BUTTON --- */}
       <button
         onClick={handleScrollToTop}
-        className={`fixed bottom-8 right-8 bg-[#FA5C5C] text-white p-3 rounded-full shadow-lg hover:bg-[#D43E3E] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+        className={`fixed bottom-8 right-8 bg-[#10B17D] text-white p-3 rounded-full shadow-lg hover:bg-[#0D8F65] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
           }`}
       >
         <ArrowUp size={24} />
@@ -307,93 +310,103 @@ export default function Dashboard() {
             fetchOptions: {
               onSuccess: () => router.push("/")
             }
-          });
+          } as any);
         }}
       />
 
-      <main className="md:ml-64 flex-1 p-4 md:p-8">
+      <main className="md:ml-72 flex-1 min-w-0">
+        <div className="max-w-[1600px] mx-auto p-4 md:p-10 space-y-10">
 
-        {/* --- MASTER CONTAINER --- */}
-        <div className="w-full max-w-[96%] mx-auto space-y-6">
-
-          <header className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-sm w-full">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"><Menu size={24} /></button>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 w-full sm:w-auto">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {activeTrip ? activeTrip.name : "Welcome"}
+          {/* Header */}
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pb-6 border-b border-gray-100">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-xl"><Menu size={24} /></button>
+              <div className="flex flex-col gap-1.5 min-w-0">
+                <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight truncate">
+                  {activeTrip ? activeTrip.name : "Dashboard"}
                 </h2>
-
                 {activeTrip?.startDate && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                    <span className="hidden sm:inline text-gray-300 text-lg font-light">|</span>
-
-                    <div className="flex items-center gap-1.5">
-                      <Calendar size={14} className="text-gray-400" />
-                      <span>
-                        {formatDate(activeTrip.startDate)}
-                        {activeTrip.endDate ? ` - ${formatDate(activeTrip.endDate)}` : ''}
-                      </span>
-                    </div>
+                  <div className="flex">
+                    <span className="text-[10px] md:text-xs font-mono font-bold text-gray-400 uppercase tracking-tight">
+                      {formatDate(activeTrip.startDate)}
+                      {activeTrip.endDate ? ` — ${formatDate(activeTrip.endDate)}` : ''}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-0 w-full sm:w-auto">
-              <Link href="/bulk_calculation" className="flex-1 sm:flex-none">
-                <button className="cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all">
-                  <Calculator size={16} />
-                  <span className="hidden sm:inline">Calculator</span>
-                </button>
-              </Link>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               {activeTrip && (
-                <button onClick={handleExport} className="cursor-pointer flex-1 sm:flex-none w-full sm:w-auto flex items-center justify-center gap-2 px-3 sm:px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all">
-                  <Download size={16} />
-                  <span className="hidden sm:inline">Export</span>
-                </button>
+                <>
+                  <button onClick={handleExport} className="cursor-pointer flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:shadow-sm transition-all active:scale-95">
+                    <Download size={18} />
+                    <span className="hidden sm:inline">Export</span>
+                  </button>
+                </>
               )}
               <button
                 onClick={() => handleAddClick('trip')}
-                className="cursor-pointer flex-1 sm:flex-none w-full sm:w-auto flex items-center justify-center gap-2 px-3 sm:px-6 py-2 bg-[#FA5C5C] text-white rounded-lg text-sm font-medium hover:bg-[#D43E3E] hover:shadow-lg active:scale-95 transition-all shadow-sm"
+                className="cursor-pointer flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10B17D] text-white rounded-xl text-sm font-bold hover:bg-[#0D8F65] hover:shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
               >
-                <Plus size={16} />
-                <span className="sm:inline">New Trip</span>
+                <Plus size={18} />
+                <span>New Trip</span>
               </button>
             </div>
           </header>
 
           {activeTrip ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <PeopleCard
-                  people={activeTrip.people}
-                  onAdd={() => handleAddClick('person')}
-                  onEdit={(p) => handleEditItem('person', p)}
-                  onDelete={(id) => handleDeleteItem('person', id)}
-                />
-                <ExpensesCard
-                  expenses={activeTrip.expenses}
-                  onAdd={() => handleAddClick('expense')}
-                  onEdit={(e) => handleEditItem('expense', e)}
-                  onDelete={(id) => handleDeleteItem('expense', id)}
-                />
-                <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
+            <>
+              {/* Summary Grid */}
+              <SummaryGrid stats={stats} />
+
+              {/* Main Content Grid */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="xl:col-span-2 space-y-8">
+                  <PeopleCard
+                    people={activeTrip.people}
+                    onAdd={() => handleAddClick('person')}
+                    onEdit={(p) => handleEditItem('person', p)}
+                    onDelete={(id) => handleDeleteItem('person', id)}
+                  />
+                  <ExpensesCard
+                    expenses={activeTrip.expenses}
+                    onAdd={() => handleAddClick('expense')}
+                    onEdit={(e) => handleEditItem('expense', e)}
+                    onDelete={(id) => handleDeleteItem('expense', id)}
+                  />
+                </div>
+                <div className="space-y-8">
+                  <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
+                </div>
               </div>
-              <div className="space-y-6">
-                <SummaryGrid stats={stats} />
-              </div>
-            </div>
+
+              {/* Charts Section - Now at the bottom */}
+              <DashboardCharts trip={activeTrip} />
+            </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-96 text-gray-400 text-center">
-              <Map size={48} className="mb-4 opacity-20" />
-              <p className="mb-4">No trips found. Create one to get started!</p>
-              <button onClick={() => handleAddClick('trip')} className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-[#FA5C5C] text-white rounded-xl text-sm font-medium hover:bg-[#D43E3E] hover:shadow-lg active:scale-95 transition-all shadow-sm"><Plus size={18} /> Create First Trip</button>
+            <div className="flex flex-col items-center justify-center h-[60vh] text-center bg-white rounded-3xl border border-gray-100 shadow-sm">
+              <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-200 mb-6">
+                <Map size={40} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">No active trips found</h3>
+              <p className="text-gray-400 max-w-xs mb-8">Create your first trip or select one from the sidebar to start tracking expenses.</p>
+              <button onClick={() => handleAddClick('trip')} className="cursor-pointer flex items-center gap-2 px-8 py-3 bg-[#10B17D] text-white rounded-xl font-bold hover:bg-[#0D8F65] hover:shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95">
+                <Plus size={20} /> Create First Trip
+              </button>
             </div>
           )}
 
         </div>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

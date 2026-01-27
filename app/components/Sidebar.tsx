@@ -1,7 +1,10 @@
+"use client";
+
 import React from 'react';
-import { Map, Edit2, Trash2, User as UserIcon, X } from 'lucide-react';
+import { Map, LayoutDashboard, Calculator, Settings, LogOut, X, User as UserIcon, Moon, Sun, Edit2, Trash2 } from 'lucide-react';
 import { Trip } from '../type';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface SidebarProps {
   trips: Trip[];
@@ -11,122 +14,179 @@ interface SidebarProps {
   onDeleteTrip: (trip: Trip) => void;
   isOpen: boolean;
   onClose: () => void;
-  user?: {
-    name: string;
-    email: string;
-    image?: string | null;
-  } | null;
+  user?: any;
   onEditProfile?: () => void;
   onLogout?: () => void;
 }
 
-export const Sidebar = ({ trips, activeTripId, onSelectTrip, onEditTrip, onDeleteTrip, isOpen, onClose, user, onEditProfile, onLogout }: SidebarProps) => {
+const scrollbarStyle = `
+  .sidebar-scrollbar::-webkit-scrollbar { width: 4px; }
+  .sidebar-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+`;
+
+export const Sidebar = ({
+  trips,
+  activeTripId,
+  onSelectTrip,
+  onEditTrip,
+  onDeleteTrip,
+  isOpen,
+  onClose,
+  user,
+  onEditProfile,
+  onLogout
+}: SidebarProps) => {
+  const pathname = usePathname();
+
+  const isActive = (path: string) => pathname === path;
+
+  const navItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Map, label: 'Trips', path: '/trips' },
+    { icon: Calculator, label: 'Calculator', path: '/bulk_calculation' },
+  ];
 
   return (
     <>
-      <div
-        className={`fixed inset-0 bg-black/20 z-30 md:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-      />
+      <style>{scrollbarStyle}</style>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
+          onClick={onClose}
+        />
+      )}
 
+      {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-gray-100 z-40
-        transform transition-transform duration-300 ease-in-out flex flex-col
+        fixed left-0 top-0 h-full w-72 bg-white border-r border-gray-100 z-50
+        transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-
-        <div className="p-6 flex items-center justify-between border-b border-gray-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#FA5C5C] rounded-xl flex items-center justify-center shadow-sm">
-              <Map className="text-white" size={20} />
+        <div className="flex flex-col h-full">
+          {/* Logo Section */}
+          <div className="p-8 pb-10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#10B17D] rounded-xl flex items-center justify-center shadow-lg shadow-[#10B17D]/20">
+                <Map className="text-white" size={24} />
+              </div>
+              <span className="text-xl font-black text-gray-900 tracking-tight">TravelCost</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-800 tracking-tight">Trip Manager</h1>
+            <button onClick={onClose} className="md:hidden p-2 text-gray-400 hover:bg-gray-50 rounded-xl transition-colors">
+              <X size={20} />
+            </button>
           </div>
-          <button onClick={onClose} className="cursor-pointer md:hidden text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded-lg transition-colors">
-            <X size={24} />
-          </button>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">Your Trips</div>
-
-          {trips.length === 0 ? (
-            <div className="text-sm text-gray-400 text-center py-8 italic">
-              No trips yet.
-            </div>
-          ) : (
-            trips.map((trip) => (
-              <div
-                key={trip.id}
-                onClick={() => { onSelectTrip(trip.id); onClose(); }}
-                className={`
-                  group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200
-                  ${activeTripId === trip.id
-                    ? 'bg-[#FA5C5C]/10 text-[#FA5C5C] font-bold'
-                    : 'text-gray-600 hover:bg-gray-50'}
-                `}
-              >
-                <div className="truncate flex-1 pr-2">
-                  {trip.name}
-                </div>
-
-                <div className={`flex items-center gap-1 ${activeTripId === trip.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onEditTrip(trip); }}
-                    className="cursor-pointer p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-blue-600 hover:shadow-sm active:scale-95 transition-all"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); }}
-                    className="cursor-pointer p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-rose-600 hover:shadow-sm active:scale-95 transition-all"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* PROFILE FOOTER */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-100 shadow-sm relative group">
-
-            <div className="flex flex-1 items-center gap-3 min-w-0 cursor-pointer" onClick={onEditProfile}>
-              {user?.image ? (
-                <img src={user.image} alt={user.name} className="w-10 h-10 rounded-full object-cover shadow-sm" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FA5C5C] to-[#D43E3E] flex items-center justify-center text-white shadow-md overflow-hidden shrink-0">
-                  <UserIcon size={18} />
-                </div>
-              )}
-
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 truncate group-hover:text-[#FA5C5C] transition-colors">
-                  {user?.name || "Guest User"}
-                </p>
-                <p className="text-[10px] text-gray-500 truncate font-medium">
-                  {user?.email || "Local Storage"}
-                </p>
+          {/* Navigation */}
+          <div className="flex-1 overflow-y-auto px-4 space-y-8 sidebar-scrollbar">
+            {/* Main Menu */}
+            <div>
+              <p className="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Main Menu</p>
+              <div className="space-y-1">
+                {navItems.map((item) => (
+                  <Link key={item.label} href={item.path} onClick={onClose}>
+                    <div className={`
+                      flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200 group
+                      ${isActive(item.path)
+                        ? 'bg-[#10B17D] text-white shadow-lg shadow-[#10B17D]/20'
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-[#10B17D]'}
+                    `}>
+                      <item.icon size={20} className={isActive(item.path) ? 'text-white' : 'text-gray-400 group-hover:text-[#10B17D]'} />
+                      <span className="font-bold text-sm">{item.label}</span>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
 
-            {/* Logout Button (only if logged in) */}
-            {user && (
-              <button
-                onClick={onLogout}
-                title="Log Out"
-                className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-              >
-                <div className="rotate-180">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>
+            {/* Quick Trip Selector (Only show if on dashboard) */}
+            {pathname === '/dashboard' && trips.length > 0 && (
+              <div>
+                <p className="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Quick Switch</p>
+                <div className="space-y-1">
+                  {trips.map((trip) => (
+                    <div
+                      key={trip.id}
+                      className={`
+                        group flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200
+                        ${activeTripId === trip.id
+                          ? 'bg-gray-50 text-[#10B17D]'
+                          : 'text-gray-600 hover:bg-gray-50'}
+                      `}
+                      onClick={() => onSelectTrip(trip.id)}
+                    >
+                      <div className="flex items-center gap-3 truncate flex-1">
+                        <div className={`w-2 h-2 rounded-full ${activeTripId === trip.id ? 'bg-[#10B17D]' : 'bg-gray-200'}`}></div>
+                        <span className="truncate font-medium text-xs">{trip.name}</span>
+                      </div>
+
+                      <div className={`flex items-center gap-1 ${activeTripId === trip.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onEditTrip(trip); }}
+                          className="p-1 hover:bg-white rounded-md text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onDeleteTrip(trip); }}
+                          className="p-1 hover:bg-white rounded-md text-gray-400 hover:text-rose-600 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </button>
+              </div>
             )}
           </div>
-        </div>
 
+          {/* User Profile */}
+          <div className="p-4 border-t border-gray-100">
+            <div className="bg-gray-50 rounded-3xl p-4 flex items-center justify-between group hover:bg-gray-100/80 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  {user?.image ? (
+                    <img src={user.image} alt={user.name} className="w-10 h-10 rounded-xl object-cover ring-2 ring-white" />
+                  ) : (
+                    <div className="w-10 h-10 bg-[#10B17D]/10 text-[#10B17D] rounded-xl flex items-center justify-center font-black ring-2 ring-white">
+                      {user?.name?.charAt(0) || <UserIcon size={18} />}
+                    </div>
+                  )}
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-gray-900 truncate">{user?.name || 'Guest User'}</p>
+                  <p className="text-[10px] font-bold text-[#10B17D] uppercase tracking-wider">Administrator</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                {onEditProfile && (
+                  <button
+                    onClick={onEditProfile}
+                    className="p-2 text-gray-400 hover:text-[#10B17D] hover:bg-white rounded-xl transition-all active:scale-90 cursor-pointer"
+                    title="Edit Profile"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                )}
+                <button
+                  onClick={onLogout}
+                  className="p-2 text-gray-400 hover:text-rose-500 hover:bg-white rounded-xl transition-all active:scale-90 cursor-pointer"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            </div>
+
+            <Link href="/" className="mt-4 block text-center py-2 text-[10px] font-bold text-gray-400 hover:text-[#10B17D] transition-colors uppercase tracking-widest cursor-pointer">
+              Back to Home
+            </Link>
+          </div>
+        </div>
       </aside>
     </>
   );

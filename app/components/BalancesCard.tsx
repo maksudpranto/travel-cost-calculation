@@ -48,7 +48,7 @@ export const BalancesCard = ({ people, avgCost }: BalancesCardProps) => {
                 <span className="text-gray-400 text-xs font-medium bg-gray-50 px-3 py-1 rounded-full border border-gray-100">All Settled</span>
               ) : (
                 <div className="text-right">
-                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isRefund ? 'text-emerald-600' : 'text-rose-500'}`}>{isRefund ? 'Gets back' : 'Owes'}</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isRefund ? 'text-[#10B17D]' : 'text-rose-500'}`}>{isRefund ? 'Gets back' : 'Owes'}</p>
                   <p className="font-bold text-gray-900 text-sm">{isRefund ? '+' : ''}৳{Math.round(Math.abs(balance)).toLocaleString()}</p>
                 </div>
               )}

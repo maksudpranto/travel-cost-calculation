@@ -98,7 +98,7 @@ function SignInContent() {
     };
 
     return (
-        <div className="min-h-screen flex font-sans selection:bg-[#FA5C5C] selection:text-white relative overflow-hidden">
+        <div className="min-h-screen flex font-sans selection:bg-[#10B17D] selection:text-white relative overflow-hidden">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <Image
@@ -109,11 +109,11 @@ function SignInContent() {
                     quality={100}
                     priority
                 />
-                <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             </div>
 
             {/* Content Container */}
-            <div className="relative z-10 w-full flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8">
+            <div className="relative z-10 w-full flex flex-col justify-center items-center px-4 py-12">
 
                 {/* Back Button */}
                 <div className="absolute top-6 left-6">
@@ -129,20 +129,20 @@ function SignInContent() {
 
                 <div className="w-full max-w-md">
                     {/* Glassmorphism Card */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/40">
-                        <div className="px-8 py-10">
+                    <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40">
+                        <div className="px-6 sm:px-10 py-10">
                             {/* Header */}
-                            <div className="text-center mb-8">
+                            <div className="text-center mb-10">
                                 <Link href="/" className="inline-flex justify-center items-center gap-3 mb-6 group">
-                                    <div className="w-12 h-12 bg-[#FA5C5C] rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                    <div className="w-12 h-12 bg-[#10B17D] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#10B17D]/20 group-hover:scale-105 transition-transform duration-300">
                                         <Map size={24} />
                                     </div>
-                                    <span className="text-2xl font-bold tracking-tight text-gray-900">Trip Manager</span>
+                                    <span className="text-2xl font-black tracking-tight text-gray-900">TravelCost</span>
                                 </Link>
-                                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                                <h2 className="text-3xl font-black text-gray-900 tracking-tight">
                                     {isSignUp ? "Create Account" : "Welcome Back"}
                                 </h2>
-                                <p className="mt-3 text-base text-gray-600">
+                                <p className="mt-2 text-sm text-gray-500 font-medium">
                                     {isSignUp ? "Join us to plan your next adventure" : "Sign in to access your trips"}
                                 </p>
                             </div>
@@ -153,24 +153,24 @@ function SignInContent() {
                                     <button
                                         type="button"
                                         onClick={() => { setUsePhone(false); setIdentifier(""); }}
-                                        className={`flex-1 flex items-center justify-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 cursor-pointer ${!usePhone ? 'bg-[#FA5C5C] text-white shadow-md' : 'text-gray-500 hover:text-gray-900'}`}
+                                        className={`flex-1 flex items-center justify-center py-2.5 text-xs font-bold rounded-lg transition-all duration-300 cursor-pointer ${!usePhone ? 'bg-[#10B17D] text-white shadow-md' : 'text-gray-400 hover:text-gray-900'}`}
                                     >
                                         Use Email
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => { setUsePhone(true); setIdentifier(""); }}
-                                        className={`flex-1 flex items-center justify-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 cursor-pointer ${usePhone ? 'bg-[#FA5C5C] text-white shadow-md' : 'text-gray-500 hover:text-gray-900'}`}
+                                        className={`flex-1 flex items-center justify-center py-2.5 text-xs font-bold rounded-lg transition-all duration-300 cursor-pointer ${usePhone ? 'bg-[#10B17D] text-white shadow-md' : 'text-gray-400 hover:text-gray-900'}`}
                                     >
                                         Use Phone
                                     </button>
                                 </div>
                             )}
 
-                            <form className="space-y-6" onSubmit={handleSubmit}>
+                            <form className="space-y-5" onSubmit={handleSubmit}>
                                 {isSignUp && (
-                                    <div className="space-y-2">
-                                        <label htmlFor="name" className="block text-sm font-semibold text-gray-700 ml-1">
+                                    <div className="space-y-1.5">
+                                        <label htmlFor="name" className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">
                                             Full Name
                                         </label>
                                         <input
@@ -181,13 +181,13 @@ function SignInContent() {
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
                                             placeholder="John Doe"
-                                            className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FA5C5C]/20 focus:border-[#FA5C5C] transition-all duration-200 sm:text-sm shadow-sm"
+                                            className="block w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#10B17D] transition-all duration-200 sm:text-sm"
                                         />
                                     </div>
                                 )}
 
-                                <div className="space-y-2">
-                                    <label htmlFor="identifier" className="block text-sm font-semibold text-gray-700 ml-1">
+                                <div className="space-y-1.5">
+                                    <label htmlFor="identifier" className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">
                                         {isSignUp ? (usePhone ? "Phone Number" : "Email Address") : "Email or Phone Number"}
                                     </label>
                                     <input
@@ -199,12 +199,12 @@ function SignInContent() {
                                         value={identifier}
                                         onChange={(e) => setIdentifier(e.target.value)}
                                         placeholder={isSignUp ? (usePhone ? "+1 (555) 000-0000" : "you@example.com") : "Enter your email or phone"}
-                                        className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FA5C5C]/20 focus:border-[#FA5C5C] transition-all duration-200 sm:text-sm shadow-sm"
+                                        className="block w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#10B17D] transition-all duration-200 sm:text-sm"
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 ml-1">
+                                <div className="space-y-1.5">
+                                    <label htmlFor="password" className="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">
                                         Password
                                     </label>
                                     <input
@@ -216,16 +216,14 @@ function SignInContent() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
-                                        className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FA5C5C]/20 focus:border-[#FA5C5C] transition-all duration-200 sm:text-sm shadow-sm"
+                                        className="block w-full px-4 py-4 bg-gray-50 border border-gray-100 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#10B17D] transition-all duration-200 sm:text-sm"
                                     />
                                 </div>
 
                                 {error && (
                                     <div className="rounded-xl bg-red-50 p-4 border border-red-100 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div className="flex">
-                                            <div className="text-sm text-red-700 font-medium">
-                                                {error}
-                                            </div>
+                                        <div className="text-sm text-red-700 font-bold">
+                                            {error}
                                         </div>
                                     </div>
                                 )}
@@ -233,15 +231,15 @@ function SignInContent() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-[#FA5C5C]/20 text-sm font-bold text-white bg-[#FA5C5C] hover:bg-[#D43E3E] hover:shadow-xl hover:shadow-[#FA5C5C]/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FA5C5C] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer transform hover:-translate-y-0.5"
+                                    className="w-full h-14 flex justify-center items-center px-4 rounded-xl shadow-lg shadow-[#10B17D]/20 text-sm font-black text-white bg-[#10B17D] hover:bg-[#0D8F65] hover:shadow-xl hover:shadow-[#10B17D]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer transform active:scale-[0.98]"
                                 >
-                                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isSignUp ? "Create Acount" : "Sign In")}
+                                    {loading ? <Loader2 className="animate-spin h-5 w-5" /> : (isSignUp ? "Create Account" : "Sign In")}
                                 </button>
                             </form>
                         </div>
 
-                        <div className="px-8 py-6 bg-gray-50/80 border-t border-gray-100 flex items-center justify-center">
-                            <p className="text-sm text-gray-600">
+                        <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-center">
+                            <p className="text-sm text-gray-500 font-medium">
                                 {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
                                 <button
                                     onClick={() => {
@@ -249,7 +247,7 @@ function SignInContent() {
                                         setError("");
                                         setUsePhone(false);
                                     }}
-                                    className="font-bold text-[#FA5C5C] hover:text-[#D43E3E] transition-colors cursor-pointer ml-1"
+                                    className="font-black text-[#10B17D] hover:text-[#0D8F65] transition-colors cursor-pointer ml-1"
                                 >
                                     {isSignUp ? "Sign In" : "Sign Up"}
                                 </button>
@@ -264,7 +262,7 @@ function SignInContent() {
 
 export default function SignInPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-[#FA5C5C]" /></div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-[#10B17D]" /></div>}>
             <SignInContent />
         </Suspense>
     );

@@ -59,10 +59,10 @@ const ModernDatePicker = ({ label, value, onChange }: { label: string, value: st
           flex items-center justify-between w-full px-4 py-3
           bg-gray-50 border rounded-xl transition-all duration-200
           ${isSelected ? 'border-gray-300 text-gray-900 bg-white' : 'border-gray-200 text-gray-400'}
-          group-hover:border-[#FA5C5C] group-hover:bg-white group-hover:shadow-sm
+          group-hover:border-[#10B17D] group-hover:bg-white group-hover:shadow-sm
         `}>
           <div className="flex items-center gap-3">
-            <CalendarIcon size={18} className={isSelected ? 'text-[#FA5C5C]' : 'text-gray-400'} />
+            <CalendarIcon size={18} className={isSelected ? 'text-[#10B17D]' : 'text-gray-400'} />
             <span className="text-sm font-medium">{displayDate}</span>
           </div>
           <ChevronDown size={16} className="text-gray-400 opacity-50" />
@@ -139,10 +139,10 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
     onClose();
   };
 
-  const inputStyle = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#FA5C5C] transition-colors";
+  const inputStyle = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-[#10B17D] transition-colors";
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50">
 
       {/* CSS Hack to ensure the calendar click area is maximized on WebKit browsers */}
       <style>{`
@@ -157,20 +157,20 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
         }
       `}</style>
 
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in slide-in-from-bottom-8 sm:zoom-in duration-300">
 
         {/* Header */}
-        <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center">
+        <div className="px-6 sm:px-8 py-5 border-b border-gray-100 flex justify-between items-center">
           <h3 className="text-xl font-bold text-gray-800">
             {type === 'profile' ? 'Edit Profile' : initialData ? 'Edit' : 'Add'} {type === 'person' ? 'Person' : type === 'expense' ? 'Expense' : type === 'trip' ? 'Trip' : ''}
           </h3>
-          <button onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 hover:bg-gray-100/50 p-2 rounded-lg transition-colors">
+          <button onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 hover:bg-gray-100/50 p-2 rounded-xl transition-colors">
             <X size={24} />
           </button>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
 
           {/* --- PERSON FORM --- */}
           {type === 'person' && (
@@ -224,7 +224,7 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
                 <input required type="text" placeholder="e.g. Cox's Bazar 2024" value={name} onChange={(e) => setName(e.target.value)} className={inputStyle} />
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <ModernDatePicker
                   label="Start Date"
                   value={startDate}
@@ -253,10 +253,10 @@ export const AddModal = ({ isOpen, onClose, type, onSave, initialData }: AddModa
           )}
 
           <div className="flex gap-4 pt-4">
-            <button type="button" onClick={onClose} className="cursor-pointer flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 hover:shadow-inner active:scale-95 transition-all">Cancel</button>
+            <button type="button" onClick={onClose} className="cursor-pointer flex-1 px-4 py-4 bg-gray-50 text-gray-600 font-bold rounded-2xl hover:bg-gray-100 transition-all active:scale-95">Cancel</button>
             <button
               type="submit"
-              className="cursor-pointer flex-1 px-4 py-3 bg-[#FA5C5C] text-white font-bold rounded-xl hover:bg-[#D43E3E] hover:shadow-lg active:scale-95 transition-all"
+              className="cursor-pointer flex-1 px-4 py-4 bg-[#10B17D] text-white font-bold rounded-2xl hover:bg-[#0D8F65] hover:shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
             >
               {initialData ? 'Update' : 'Save'}
             </button>
