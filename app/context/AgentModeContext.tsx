@@ -12,23 +12,6 @@ const AgentModeContext = createContext<AgentModeContextType | undefined>(undefin
 
 export function AgentModeProvider({ children }: { children: React.ReactNode }) {
     const [isAgentMode, setIsAgentMode] = useState<boolean>(false);
-    const [isLoaded, setIsLoaded] = useState(false);
-
-    // Load from localStorage on mount
-    useEffect(() => {
-        const saved = localStorage.getItem('agent_mode_enabled');
-        if (saved === 'true') {
-            setIsAgentMode(true);
-        }
-        setIsLoaded(true);
-    }, []);
-
-    // Save to localStorage when changed
-    useEffect(() => {
-        if (isLoaded) {
-            localStorage.setItem('agent_mode_enabled', isAgentMode.toString());
-        }
-    }, [isAgentMode, isLoaded]);
 
     const setAgentMode = (enabled: boolean) => setIsAgentMode(enabled);
     const toggleAgentMode = () => setIsAgentMode(prev => !prev);
