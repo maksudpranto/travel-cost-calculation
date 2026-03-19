@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, Receipt, Coins, Users, TrendingUp, TrendingDown, LucideIcon } from "lucide-react";
+import { Wallet, Receipt, Coins, Users, LucideIcon } from "lucide-react";
 
 interface SummaryGridProps {
   stats: {
@@ -9,110 +9,84 @@ interface SummaryGridProps {
     avgCost: number;
     maxCost: number;
     minCost: number;
-    maxExpenseName?: string; // New Prop
-    minExpenseName?: string; // New Prop
+    maxExpenseName?: string;
+    minExpenseName?: string;
   };
 }
 
-// Internal Stat Card Component
 const StatItem = ({
   label,
   value,
-  subLabel, // New Optional Prop for "Title: ..."
+  subLabel,
   icon: Icon,
-  iconColor,
-  iconBg
+  color,
 }: {
   label: string;
   value: string;
   subLabel?: string;
   icon: LucideIcon;
-  iconColor: string;
-  iconBg: string;
-}) => (
-  <div className="flex flex-col justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-100/50 hover:bg-white hover:shadow-md hover:border-gray-200 transition-all duration-200 group">
-    <div className="flex justify-between items-start mb-2">
-      <div className={`p-2.5 rounded-xl ${iconBg} ${iconColor} transition-transform group-hover:scale-110`}>
-        <Icon size={20} />
+  color: string;
+}) => {
+  const colorMap: Record<string, string> = {
+    blue: 'from-blue-500 to-blue-600',
+    rose: 'from-rose-500 to-rose-600',
+    emerald: 'from-emerald-500 to-emerald-600',
+    purple: 'from-purple-500 to-indigo-600',
+  };
+
+  return (
+    <div className={`bg-gradient-to-br ${colorMap[color] || 'from-gray-500 to-gray-600'} p-4 sm:p-6 rounded-2xl hover:scale-[1.02] transition-all duration-300 group text-white border border-white/10`}>
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-white/20 backdrop-blur-md border border-white/20">
+          <Icon size={18} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-1">{label}</p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-xl sm:text-3xl font-black leading-none tracking-tight">৳{value}</span>
+        </div>
+        {subLabel && subLabel !== 'Title: -' && (
+          <p className="text-[10px] text-white/70 font-medium truncate mt-2 border-t border-white/10 pt-2">
+            {subLabel}
+          </p>
+        )}
       </div>
     </div>
-
-    <div>
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-
-      {/* Main Value */}
-      <p className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-        ৳{value}
-      </p>
-
-      {/* Sub Label (Title: Expense Name) */}
-      {subLabel && subLabel !== 'Title: -' && (
-        <p className="text-[10px] sm:text-xs text-gray-500 font-medium truncate mt-1 bg-gray-100/80 px-2 py-0.5 rounded-md inline-block max-w-full">
-          {subLabel}
-        </p>
-      )}
-    </div>
-  </div>
-);
+  );
+};
 
 export const SummaryGrid = ({ stats }: SummaryGridProps) => {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50">
-      <h3 className="text-lg font-bold text-gray-800 mb-5">Trip Summary</h3>
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 w-full">
+      <StatItem
+        label="Total Deposits"
+        value={stats.totalDeposits.toLocaleString()}
+        icon={Wallet}
+        color="emerald"
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatItem
-          label="Total Deposits"
-          value={stats.totalDeposits.toLocaleString()}
-          icon={Wallet}
-          iconColor="text-emerald-600"
-          iconBg="bg-emerald-100"
-        />
+      <StatItem
+        label="Total Spent"
+        value={stats.totalExpenses.toLocaleString()}
+        icon={Receipt}
+        color="rose"
+      />
 
-        <StatItem
-          label="Total Spent"
-          value={stats.totalExpenses.toLocaleString()}
-          icon={Receipt}
-          iconColor="text-rose-600"
-          iconBg="bg-rose-100"
-        />
+      <StatItem
+        label="Remaining Fund"
+        value={stats.remaining.toLocaleString()}
+        icon={Coins}
+        color="blue"
+      />
 
-        <StatItem
-          label="Remaining Money"
-          value={stats.remaining.toLocaleString()}
-          icon={Coins}
-          iconColor="text-blue-600"
-          iconBg="bg-blue-100"
-        />
-
-        <StatItem
-          label="Average Cost Per Person"
-          value={Math.round(stats.avgCost).toLocaleString()}
-          icon={Users}
-          iconColor="text-purple-600"
-          iconBg="bg-purple-100"
-        />
-
-        {/* MAX EXPENSE with Title */}
-        <StatItem
-          label="Max Expense"
-          value={stats.maxCost.toLocaleString()}
-          subLabel={`Expense: ${stats.maxExpenseName || '-'}`}
-          icon={TrendingUp}
-          iconColor="text-orange-600"
-          iconBg="bg-orange-100"
-        />
-
-        {/* MIN EXPENSE with Title */}
-        <StatItem
-          label="Min Expense"
-          value={stats.minCost.toLocaleString()}
-          subLabel={`Expense: ${stats.minExpenseName || '-'}`}
-          icon={TrendingDown}
-          iconColor="text-teal-600"
-          iconBg="bg-teal-100"
-        />
-      </div>
+      <StatItem
+        label="Cost Per Person"
+        value={Math.round(stats.avgCost).toLocaleString()}
+        icon={Users}
+        color="purple"
+      />
     </div>
   );
 };

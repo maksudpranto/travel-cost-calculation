@@ -4,9 +4,9 @@ import { Person } from '../type';
 
 interface PeopleCardProps {
   people: Person[];
-  onAdd: () => void;
-  onEdit: (person: Person) => void;
-  onDelete: (id: number) => void;
+  onAdd?: () => void;
+  onEdit?: (person: Person) => void;
+  onDelete?: (id: number) => void;
 }
 
 const scrollbarStyle = `
@@ -18,47 +18,56 @@ const scrollbarStyle = `
 
 export const PeopleCard = ({ people, onAdd, onEdit, onDelete }: PeopleCardProps) => {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 w-full">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100/50 w-full">
       <style>{scrollbarStyle}</style>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-bold text-gray-800">People</h3>
-        <button
-          onClick={onAdd}
-          className="cursor-pointer flex items-center gap-2 text-sm font-medium bg-[#41644A] text-white hover:bg-[#2e4a34] px-6 py-2 rounded-lg shadow-sm transition-all hover:shadow-lg active:scale-95"
-        >
-          <Plus size={16} /> Add
-        </button>
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            className="cursor-pointer flex items-center gap-2 text-sm font-bold bg-[#10B17D] text-white hover:bg-[#0D8F65] px-6 py-2.5 rounded-xl shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
+          >
+            <Plus size={16} /> Add
+          </button>
+        )}
       </div>
 
       <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-        {people.map((person, index) => (
-          <div key={person.id} className="flex items-center justify-between group p-2 rounded-xl hover:bg-gray-50/80 transition-colors">
-
-            {/* LEFT: Serial + Avatar + Name */}
-            <div className="flex items-center gap-3">
-              {/* SERIAL NUMBER */}
-              <span className="text-gray-400 text-xs font-mono font-bold w-6">
-                {(index + 1).toString().padStart(2, '0')}
-              </span>
-
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                {person.name.charAt(0)}
+        {people.length > 0 ? (
+          people.map((person, index) => (
+            <div key={person.id} className="flex items-center justify-between group p-2 rounded-xl hover:bg-gray-50/80 transition-colors">
+              {/* LEFT: Serial + Avatar + Name */}
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:block text-gray-400 text-xs font-mono font-bold w-6">
+                  {(index + 1).toString().padStart(2, '0')}
+                </span>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                  {person.name.charAt(0)}
+                </div>
+                <span className="font-semibold text-gray-900">{person.name}</span>
               </div>
-              <span className="font-semibold text-gray-900">{person.name}</span>
+
+              {/* RIGHT: Amount + Actions */}
+              <div className="flex items-center gap-3">
+                <div className="font-bold tabular-nums text-sm text-gray-700 bg-gray-100/50 border border-gray-200/50 px-2 sm:px-3 py-1.5 rounded-lg w-auto sm:w-28 text-right backdrop-blur-sm">
+                  ৳{person.deposit.toLocaleString()}
+                </div>
+                <div className="flex gap-1">
+                  {onEdit && <button onClick={() => onEdit(person)} className="cursor-pointer text-gray-300 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 hover:shadow-md active:scale-90 transition-all"><Pencil size={16} /></button>}
+                  {onDelete && <button onClick={() => onDelete(person.id)} className="cursor-pointer text-gray-300 hover:text-red-600 p-2 rounded-md hover:bg-red-50 hover:shadow-md active:scale-90 transition-all"><Trash2 size={16} /></button>}
+                </div>
+              </div>
             </div>
-
-            {/* RIGHT: Amount + Actions */}
-            <div className="flex items-center gap-3">
-              <div className="font-bold tabular-nums text-sm text-gray-700 bg-gray-100/50 border border-gray-200/50 px-3 py-1.5 rounded-lg w-28 text-right backdrop-blur-sm">
-                ৳{person.deposit.toLocaleString()}
-              </div>
-              <div className="flex gap-1">
-                <button onClick={() => onEdit(person)} className="cursor-pointer text-gray-300 hover:text-blue-600 p-2 rounded-md hover:bg-blue-50 hover:shadow-md active:scale-90 transition-all"><Pencil size={16} /></button>
-                <button onClick={() => onDelete(person.id)} className="cursor-pointer text-gray-300 hover:text-red-600 p-2 rounded-md hover:bg-red-50 hover:shadow-md active:scale-90 transition-all"><Trash2 size={16} /></button>
-              </div>
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+              <Plus className="text-gray-300" size={32} />
             </div>
+            <h4 className="text-sm font-bold text-gray-900 mb-1">No people added yet</h4>
+            <p className="text-xs text-gray-400 max-w-[200px]">Add your travel buddies to start tracking deposits and splitting costs.</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

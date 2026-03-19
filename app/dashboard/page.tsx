@@ -1,21 +1,19 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Download, Menu, Map, Calculator, ArrowUp, Calendar } from "lucide-react";
-import Link from 'next/link';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import { Plus, Download, Menu, Map as MapIcon, ArrowUp, Calendar, Lock, Unlock } from "lucide-react";
 import { authClient } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
-
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // --- IMPORTANT: UPDATED IMPORTS (added ../) ---
 import { Trip } from '../type';
 import { Sidebar } from '../components/Sidebar';
-import { AddModal, DeleteConfirmModal } from '../components/Modals';
+import { AddModal, DeleteConfirmModal, ConfirmModal } from '../components/Modals';
 import { PeopleCard } from '../components/PeopleCard';
 import { ExpensesCard } from '../components/ExpensesCard';
 import { BalancesCard } from '../components/BalancesCard';
 import { SummaryGrid } from '../components/SummaryGrid';
-// ... (Rest of the Dashboard code remains exactly the same) ...
+import { DashboardCharts } from '../components/DashboardCharts';
 
 const globalStyles = `
   input[type=number]::-webkit-inner-spin-button,
@@ -27,15 +25,17 @@ const globalStyles = `
   html { scroll-behavior: smooth; }
 `;
 
-export default function Dashboard() {
+function DashboardContent() {
   const { data: session } = authClient.useSession();
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const tripIdParam = searchParams.get('tripId');
 
   // --- APP STATE ---
   const [trips, setTrips] = useState<Trip[]>([]);
   const [activeTripId, setActiveTripId] = useState<number>(0);
-  const activeTrip = trips.find(t => t.id === activeTripId) || trips[0];
+  const ongoingTrips = useMemo(() => trips.filter(t => t.type !== 'bulk' && t.status !== 'completed'), [trips]);
+  const activeTrip = trips.find(t => t.id === activeTripId) || ongoingTrips[0];
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -51,8 +51,13 @@ export default function Dashboard() {
         const data = await res.json();
         setTrips(data);
         setIsLoaded(true);
-        if (data.length > 0 && activeTripId === 0) {
-          setActiveTripId(data[0].id);
+        const ongoing = data.filter((t: any) => t.type !== 'bulk' && t.status !== 'completed');
+        if (data.length > 0) {
+          if (tripIdParam) {
+            setActiveTripId(Number(tripIdParam));
+          } else if (activeTripId === 0 && ongoing.length > 0) {
+            setActiveTripId(ongoing[0].id);
+          }
         }
       }
     } catch (error) {
@@ -68,7 +73,7 @@ export default function Dashboard() {
     } else {
       setIsLoading(false);
     }
-  }, [session]);
+  }, [session, tripIdParam]);
 
 
   // --- SCROLL LISTENER ---
@@ -82,10 +87,11 @@ export default function Dashboard() {
 
   // --- UI STATES ---
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip' | 'profile'>('expense');
+  const [modalType, setModalType] = useState<'person' | 'expense' | 'trip' | 'profile' | 'bulk_trip'>('expense');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'person' | 'expense' | 'trip', id: number } | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [isToggleModalOpen, setIsToggleModalOpen] = useState(false);
 
   // --- CALCULATIONS ---
   const stats = useMemo(() => {
@@ -132,11 +138,49 @@ export default function Dashboard() {
 
   // --- HANDLERS ---
   const handleAddClick = (type: 'person' | 'expense' | 'trip' | 'profile') => { setEditingItem(null); setModalType(type); setModalOpen(true); };
-  const handleEditItem = (type: 'person' | 'expense' | 'trip', item: any) => { setEditingItem(item); setModalType(type); setModalOpen(true); };
+  const handleEditItem = (type: 'person' | 'expense' | 'trip', item: any) => {
+    setEditingItem(item);
+    const finalType = (type === 'trip' && item.type === 'bulk') ? 'bulk_trip' : type;
+    setModalType(finalType as any);
+    setModalOpen(true);
+  };
   const handleDeleteItem = (type: 'person' | 'expense' | 'trip', id: number) => { setItemToDelete({ type, id }); };
 
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleToggleStatus = () => {
+    if (!activeTrip) return;
+    setIsToggleModalOpen(true);
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!activeTrip) return;
+    const newStatus: 'active' | 'completed' = activeTrip.status === 'completed' ? 'active' : 'completed';
+    const updatedTrip = { ...activeTrip, status: newStatus };
+
+    // Optimistic Update
+    setTrips(trips.map(t => t.id === activeTripId ? updatedTrip : t));
+    setIsToggleModalOpen(false);
+
+    // API Update
+    const res = await fetch(`/api/trips/${activeTrip.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedTrip)
+    });
+
+    if (res.ok && newStatus === 'completed') {
+      const remainingOngoing = trips.filter(t => t.id !== activeTrip.id && t.type !== 'bulk' && t.status !== 'completed');
+      if (remainingOngoing.length === 0) {
+        setActiveTripId(0);
+        router.push('/dashboard');
+      } else {
+        setActiveTripId(remainingOngoing[0].id);
+        router.push(`/dashboard?tripId=${remainingOngoing[0].id}`);
+      }
+    }
   };
 
   const handleExport = () => {
@@ -164,7 +208,7 @@ export default function Dashboard() {
     if (modalType === 'trip') {
       if (editingItem) {
         // Update Trip Logic
-        const updatedTrip = { ...activeTrip, name: data.name, startDate: data.startDate, endDate: data.endDate };
+        const updatedTrip = { ...editingItem, name: data.name, startDate: data.startDate, endDate: data.endDate };
         // Optimistic Update
         const updatedTrips = trips.map(t => t.id === editingItem.id ? updatedTrip : t);
         setTrips(updatedTrips);
@@ -274,15 +318,26 @@ export default function Dashboard() {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900">
+    <div className="flex min-h-screen bg-[#FDFDFD] font-sans text-gray-900">
       <style>{globalStyles}</style>
       <AddModal isOpen={modalOpen} onClose={() => setModalOpen(false)} type={modalType} onSave={saveData} initialData={editingItem} />
       <DeleteConfirmModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} title={itemToDelete?.type === 'trip' ? "Delete Trip?" : "Are you sure?"} message={itemToDelete?.type === 'trip' ? "This will delete the trip and all data." : undefined} />
+      <ConfirmModal
+        isOpen={isToggleModalOpen}
+        onClose={() => setIsToggleModalOpen(false)}
+        onConfirm={confirmToggleStatus}
+        title={activeTrip?.status === 'completed' ? "Resume Trip?" : "End Trip?"}
+        message={activeTrip?.status === 'completed'
+          ? "This will reopen the trip for new expenses and modifications."
+          : "This will mark the trip as completed and lock it from new expenses."}
+        confirmText={activeTrip?.status === 'completed' ? "Resume Journey" : "Complete Trip"}
+        variant={activeTrip?.status === 'completed' ? 'success' : 'warning'}
+      />
 
       {/* --- BACK TO TOP BUTTON --- */}
       <button
         onClick={handleScrollToTop}
-        className={`fixed bottom-8 right-8 bg-[#41644A] text-white p-3 rounded-full shadow-lg hover:bg-[#2e4a34] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+        className={`fixed bottom-8 right-8 bg-[#10B17D] text-white p-3 rounded-full shadow-lg hover:bg-[#0D8F65] hover:scale-110 hover:shadow-xl cursor-pointer transition-all duration-300 z-50 transform ${showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
           }`}
       >
         <ArrowUp size={24} />
@@ -291,7 +346,14 @@ export default function Dashboard() {
       <Sidebar
         trips={trips}
         activeTripId={activeTripId}
-        onSelectTrip={setActiveTripId}
+        onSelectTrip={(id) => {
+          const trip = trips.find(t => t.id === id);
+          if (trip?.type === 'bulk') {
+            router.push(`/bulk_calculation?tripId=${id}`);
+          } else {
+            setActiveTripId(id);
+          }
+        }}
         onEditTrip={(trip: Trip) => handleEditItem('trip', trip)}
         onDeleteTrip={(trip: Trip) => handleDeleteItem('trip', trip.id)}
         isOpen={sidebarOpen}
@@ -307,85 +369,126 @@ export default function Dashboard() {
             fetchOptions: {
               onSuccess: () => router.push("/")
             }
-          });
+          } as any);
         }}
       />
 
-      <main className="md:ml-64 flex-1 p-4 md:p-8">
+      <main className="md:ml-80 flex-1 min-w-0">
+        <div className="max-w-[1600px] mx-auto p-4 md:p-10 space-y-10">
 
-        {/* --- MASTER CONTAINER --- */}
-        <div className="w-full max-w-[96%] mx-auto space-y-6">
-
-          <header className="bg-white rounded-xl border border-gray-100 p-4 flex justify-between items-center shadow-sm w-full">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"><Menu size={24} /></button>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {activeTrip ? activeTrip.name : "Welcome"}
+          {/* Header */}
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pb-6 border-b border-gray-100">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-xl"><Menu size={24} /></button>
+              <div className="flex flex-col gap-1.5 min-w-0">
+                <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight truncate">
+                  {activeTrip ? activeTrip.name : "Dashboard"}
                 </h2>
-
                 {activeTrip?.startDate && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                    <span className="hidden sm:inline text-gray-300 text-lg font-light">|</span>
-
-                    <div className="flex items-center gap-1.5">
-                      <Calendar size={14} className="text-gray-400" />
-                      <span>
-                        {formatDate(activeTrip.startDate)}
-                        {activeTrip.endDate ? ` - ${formatDate(activeTrip.endDate)}` : ''}
-                      </span>
-                    </div>
+                  <div className="flex">
+                    <span className="text-[10px] md:text-xs font-mono font-bold text-gray-400 uppercase tracking-tight">
+                      {formatDate(activeTrip.startDate)}
+                      {activeTrip.endDate ? ` — ${formatDate(activeTrip.endDate)}` : ''}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <Link href="/bulk_calculation">
-                <button className="cursor-pointer flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all"><Calculator size={16} /> Calculator</button>
-              </Link>
-              {activeTrip && <button onClick={handleExport} className="cursor-pointer flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 hover:shadow-md active:scale-95 transition-all"><Download size={16} /> Export</button>}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {activeTrip && (
+                <>
+                  <button
+                    onClick={handleToggleStatus}
+                    className={`cursor-pointer flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${activeTrip.status === 'completed'
+                      ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20'
+                      : 'bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100'
+                      }`}
+                  >
+                    {activeTrip.status === 'completed' ? <Unlock size={18} /> : <Lock size={18} />}
+                    <span>{activeTrip.status === 'completed' ? 'Resume Trip' : 'End Trip'}</span>
+                  </button>
+                  <button onClick={handleExport} className="cursor-pointer flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:shadow-sm transition-all active:scale-95">
+                    <Download size={18} />
+                    <span>Export</span>
+                  </button>
+                </>
+              )}
               <button
                 onClick={() => handleAddClick('trip')}
-                className="cursor-pointer flex items-center gap-2 px-6 py-2 bg-[#41644A] text-white rounded-lg text-sm font-medium hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all shadow-sm"
+                className="cursor-pointer flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10B17D] text-white rounded-xl text-sm font-bold hover:bg-[#0D8F65] hover:shadow-lg shadow-[#10B17D]/20 transition-all active:scale-95"
               >
-                <Plus size={16} /> New Trip
+                <Plus size={18} />
+                <span>New Trip</span>
               </button>
             </div>
           </header>
 
           {activeTrip ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <PeopleCard
-                  people={activeTrip.people}
-                  onAdd={() => handleAddClick('person')}
-                  onEdit={(p) => handleEditItem('person', p)}
-                  onDelete={(id) => handleDeleteItem('person', id)}
-                />
-                <ExpensesCard
-                  expenses={activeTrip.expenses}
-                  onAdd={() => handleAddClick('expense')}
-                  onEdit={(e) => handleEditItem('expense', e)}
-                  onDelete={(id) => handleDeleteItem('expense', id)}
-                />
-                <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
+            <>
+              {/* Summary Grid */}
+              <SummaryGrid stats={stats} />
+
+              {/* Main Content Grid */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="xl:col-span-2 space-y-8">
+                  <PeopleCard
+                    people={activeTrip.people}
+                    onAdd={activeTrip.status === 'completed' ? undefined : () => handleAddClick('person')}
+                    onEdit={activeTrip.status === 'completed' ? undefined : (p) => handleEditItem('person', p)}
+                    onDelete={activeTrip.status === 'completed' ? undefined : (id) => handleDeleteItem('person', id)}
+                  />
+                  <ExpensesCard
+                    expenses={activeTrip.expenses}
+                    onAdd={activeTrip.status === 'completed' ? undefined : () => handleAddClick('expense')}
+                    onEdit={activeTrip.status === 'completed' ? undefined : (e) => handleEditItem('expense', e)}
+                    onDelete={activeTrip.status === 'completed' ? undefined : (id) => handleDeleteItem('expense', id)}
+                  />
+                </div>
+                <div className="space-y-8">
+                  <BalancesCard people={activeTrip.people} avgCost={stats.avgCost} />
+                </div>
               </div>
-              <div className="space-y-6">
-                <SummaryGrid stats={stats} />
-              </div>
-            </div>
+
+              {/* Charts Section - Now at the bottom */}
+              <DashboardCharts trip={activeTrip} />
+            </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-96 text-gray-400 text-center">
-              <Map size={48} className="mb-4 opacity-20" />
-              <p className="mb-4">No trips found. Create one to get started!</p>
-              <button onClick={() => handleAddClick('trip')} className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-[#41644A] text-white rounded-xl text-sm font-medium hover:bg-[#2e4a34] hover:shadow-lg active:scale-95 transition-all shadow-sm"><Plus size={18} /> Create First Trip</button>
+            <div className="flex flex-col items-center justify-center min-h-[500px] text-center bg-white rounded-[2.5rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.02)] p-12 relative overflow-hidden group">
+              {/* Background Glow */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#10B17D]/5 rounded-full blur-3xl group-hover:bg-[#10B17D]/10 transition-all duration-500" />
+
+              <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center text-gray-200 mb-8 border border-gray-100 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                <MapIcon size={48} className="text-gray-200 group-hover:text-[#10B17D] transition-colors duration-500" />
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-3xl font-black text-gray-900 tracking-tight">No Ongoing Trips Found</h3>
+                <p className="text-gray-400 font-bold max-w-sm mx-auto leading-relaxed">
+                  Every great journey starts with a single plan. Create your first trip to start tracking expenses and splitting costs with friends.
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleAddClick('trip')}
+                className="mt-10 cursor-pointer flex items-center gap-3 px-10 py-4 bg-gray-900 text-white rounded-2xl font-black text-sm tracking-widest uppercase hover:bg-[#10B17D] shadow-xl hover:shadow-[#10B17D]/20 transition-all active:scale-95 group/btn"
+              >
+                <Plus size={20} className="group-hover/btn:rotate-90 transition-transform duration-300" />
+                <span>Start New Journey</span>
+              </button>
             </div>
           )}
 
         </div>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }
