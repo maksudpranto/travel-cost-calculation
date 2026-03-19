@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import clientPromise from "@/lib/mongodb";
+import { db } from "@/lib/db";
 
 export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -20,33 +20,47 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         }
 
         const data = await req.json();
-        // Destructure to prevent overwriting protected fields like _id or userId if passed malicious data
         const { name, currency, startDate, endDate, people, expenses, type, touristCount, feePerPerson, status } = data;
 
-        const client = await clientPromise;
-        const db = client.db();
+        const updateFields: string[] = [];
+        const values: any[] = [];
+        let placeholderIndex = 1;
 
-        const updateDoc: any = { updatedAt: new Date() };
+        const addField = (name: string, value: any) => {
+            if (value !== undefined) {
+                updateFields.push(`"${name}" = $${placeholderIndex++}`);
+                values.push(typeof value === 'object' ? JSON.stringify(value) : value);
+            }
+        };
 
-        if (name !== undefined) updateDoc.name = name;
-        if (currency !== undefined) updateDoc.currency = currency;
-        if (startDate !== undefined) updateDoc.startDate = startDate;
-        if (endDate !== undefined) updateDoc.endDate = endDate;
-        if (people !== undefined) updateDoc.people = people;
-        if (expenses !== undefined) updateDoc.expenses = expenses;
-        if (type !== undefined) updateDoc.type = type;
-        if (touristCount !== undefined) updateDoc.touristCount = touristCount;
-        if (feePerPerson !== undefined) updateDoc.feePerPerson = feePerPerson;
-        if (status !== undefined) updateDoc.status = status;
+        addField("name", name);
+        addField("currency", currency);
+        addField("startDate", startDate);
+        addField("endDate", endDate);
+        addField("people", people);
+        addField("expenses", expenses);
+        addField("type", type);
+        addField("touristCount", touristCount);
+        addField("feePerPerson", feePerPerson);
+        addField("status", status);
 
-        const result = await db.collection("trips").updateOne(
-            { id: tripId, userId: session.user.id },
-            { $set: updateDoc }
-        );
+        updateFields.push(`"updatedAt" = $${placeholderIndex++}`);
+        values.push(new Date());
 
-        console.log("Trip updated:", tripId, "Updated fields:", Object.keys(updateDoc));
+        if (updateFields.length === 1) {
+             return NextResponse.json({ message: "No fields to update" });
+        }
 
-        if (result.matchedCount === 0) {
+        const query = `
+            UPDATE trips 
+            SET ${updateFields.join(", ")} 
+            WHERE "id" = $${placeholderIndex++} AND "userId" = $${placeholderIndex++}
+        `;
+        values.push(tripId, session.user.id);
+
+        const result = await db.query(query, values);
+
+        if (result.rowCount === 0) {
             return NextResponse.json({ error: "Trip not found or unauthorized" }, { status: 404 });
         }
 
@@ -73,15 +87,12 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
             return NextResponse.json({ error: "Invalid Trip ID" }, { status: 400 });
         }
 
-        const client = await clientPromise;
-        const db = client.db();
+        const result = await db.query(
+            'DELETE FROM trips WHERE "id" = $1 AND "userId" = $2',
+            [tripId, session.user.id]
+        );
 
-        const result = await db.collection("trips").deleteOne({
-            id: tripId,
-            userId: session.user.id,
-        });
-
-        if (result.deletedCount === 0) {
+        if (result.rowCount === 0) {
             return NextResponse.json({ error: "Trip not found or unauthorized" }, { status: 404 });
         }
 

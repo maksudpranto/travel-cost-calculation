@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import clientPromise from "@/lib/mongodb";
+import { db } from "@/lib/db";
 
 export async function GET(req: Request) {
     try {
@@ -13,13 +13,9 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const client = await clientPromise;
-        const db = client.db();
+        const { rows } = await db.query('SELECT * FROM trips WHERE "userId" = $1 ORDER BY "createdAt" DESC', [session.user.id]);
 
-        // Fetch trips for the logged-in user
-        const trips = await db.collection("trips").find({ userId: session.user.id }).toArray();
-
-        return NextResponse.json(trips);
+        return NextResponse.json(rows);
     } catch (error) {
         console.error("Failed to fetch trips:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -43,12 +39,39 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
         }
 
-        const client = await clientPromise;
-        const db = client.db();
+        const tripId = id || Date.now();
+        const createdAt = new Date();
+        const updatedAt = new Date();
 
-        const newTrip = {
+        await db.query(
+            `INSERT INTO trips (
+                "id", "userId", "name", "currency", "startDate", "endDate", 
+                "type", "touristCount", "feePerPerson", "status", "people", "expenses", 
+                "createdAt", "updatedAt"
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+            [
+                tripId,
+                session.user.id,
+                name,
+                currency || "BDT",
+                startDate,
+                endDate,
+                type || "regular",
+                touristCount,
+                feePerPerson,
+                status || "active",
+                JSON.stringify(people || []),
+                JSON.stringify(expenses || []),
+                createdAt,
+                updatedAt
+            ]
+        );
+
+        console.log("Trip created:", name, "Type:", type);
+
+        return NextResponse.json({ 
+            id: tripId, 
             userId: session.user.id,
-            id: id || Date.now(),
             name,
             currency: currency || "BDT",
             startDate,
@@ -59,14 +82,9 @@ export async function POST(req: Request) {
             status: status || "active",
             people: people || [],
             expenses: expenses || [],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-
-        const result = await db.collection("trips").insertOne(newTrip);
-        console.log("Trip created:", newTrip.name, "Type:", newTrip.type);
-
-        return NextResponse.json({ ...newTrip, _id: result.insertedId }, { status: 201 });
+            createdAt,
+            updatedAt
+        }, { status: 201 });
     } catch (error) {
         console.error("Failed to create trip:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
